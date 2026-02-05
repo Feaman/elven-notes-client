@@ -31,7 +31,10 @@ export default class SocketIOService extends BaseService {
 
   static init() {
     const token = StorageService.get(UsersService.AUTH_TOKEN_NAME)
-    const socket = io('api.notes.pavlo.ru', { extraHeaders: { Authorization: `Bearer ${token}` } })
+    const socket = io(
+      process.env.DEV ? 'localhost:3015' : BaseService.API_DOMAIN,
+      { extraHeaders: { Authorization: `Bearer ${token}` } },
+    )
 
     socket.on('connect', () => {
       this.socketId = socket.id || ''

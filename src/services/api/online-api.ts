@@ -3,7 +3,6 @@ import { TListItemModel, type TListItem } from '~/composables/models/list-item'
 import { TNote, TNoteModel } from '~/composables/models/note'
 import AxiosApi from '~/services/api/axios-api'
 import IApi from '~/services/api/interface'
-import BaseService from '../base'
 import { ConfigObject } from './interface'
 
 export default class OnlineApiService implements IApi {
@@ -13,11 +12,6 @@ export default class OnlineApiService implements IApi {
 
   constructor() {
     this.api = OnlineApiService.axiosApi
-  }
-
-  static async getCurrentVersion(): Promise<{ version: string }> {
-    const { data } = await this.axiosApi.get(`${BaseService.URL}version.json`)
-    return data as { version: string }
   }
 
   async getConfig(): Promise<ConfigObject> {

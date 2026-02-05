@@ -22,9 +22,9 @@ async function register(email: string, password: string, firstName: string, seco
   auth(data)
 }
 
-function signOut() {
+async function signOut() {
   InitService.clearApplication()
-  BaseService.router.push('/sign')
+  await BaseService.router.push('/sign')
 }
 
 export const isWatch = computed(() => {

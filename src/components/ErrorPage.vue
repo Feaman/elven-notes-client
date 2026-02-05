@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import UsersService from '~/composables/services/users'
 import { type TGlobalError } from '~/types'
 
 const props = defineProps<{
@@ -32,6 +33,10 @@ const props = defineProps<{
 
 const statusCode = props.error.statusCode || 500
 const message = computed(() => (props.error.statusCode === 404 ? 'Page not found' : props.error.message))
+
+if (message.value.includes('Invalid algorithm')) {
+  window.localStorage.removeItem(UsersService.AUTH_TOKEN_NAME)
+}
 
 function home() {
   window.location.href = '/'

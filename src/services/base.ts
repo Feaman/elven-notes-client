@@ -8,7 +8,7 @@ import ApiService from './api/api'
 export default class BaseService {
   static API_URL = 'https://api.notes.pavlo.ru/'
 
-  static URL = 'https://notes.pavlo.ru/'
+  static API_DOMAIN = 'api.notes.pavlo.ru'
 
   static OFFLINE_STORE_NAME = 'offline-data'
 
