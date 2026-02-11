@@ -1,86 +1,93 @@
-<template lang="pug">
-q-layout.main-layout(
-  view="hHh Lpr fFf"
-)
-  q-page-container(v-if="isNoOfflineDataError")
-    .offline-data-error.q-flex.flex-center.pa-8
-      q-card
-        q-toolbar.q-flex.bg-primary.shadow-3
-          q-toolbar-title.ml-2
-            .q-flex.items-center
-              q-icon(
-                :name="mdiAlertDecagram"
-                size="sm"
-                color="red"
-              )
-              .font-size-18.ml-2 Connection error
-          q-btn(
-            @click="showDialog = false"
-            :icon="mdiClose"
-            color="black"
-            flat
-            round
-            dense
-          )
-        .pa-6
-          .font-size-18 Looks like there is no Internet here. To use this app in offline mode you should be authorized and start the app online at least once.
-  q-page-container(v-else-if="isErrorShown")
-    ErrorPage(:error="{statusCode: globalStore.initError?.statusCode, message: globalStore.initError?.message}")
-  q-page-container(v-else-if="globalStore.isInitDataLoading")
-    template(
-      v-if="$route.name === 'notes'"
-    )
-      q-skeleton.bg-grey-3(
-        type="rect"
-        height="50px"
-      )
-      .column
-        .row.pa-4
-          q-skeleton.note.bg-grey-3.ma-2(
-            v-for="index in 6"
-            :key="index"
-            type="rect"
-          )
-        .row.pa-4
-          q-skeleton.note.bg-grey-3.ma-2(
-            v-for="index in 6"
-            :key="index"
-            type="rect"
-          )
-    template(
-      v-if="['existed-note', 'new-note'].includes(String($route.name))"
-    )
-      NotListSkeletons
-  q-page-container.page.pa-0(v-else)
-    router-view.page-content(
-      v-slot="{ Component }"
-    )
-      transition(
-        appear
-        enter-active-class="animated slideFadeAppear"
-      )
-        component(
-          :is="Component"
-        )
+<template>
+  <q-layout
+    class="main-layout"
+    view="hHh Lpr fFf"
+  >
+    <q-page-container v-if="isNoOfflineDataError">
+      <div class="offline-data-error q-flex flex-center pa-8">
+        <q-card>
+          <q-toolbar class="q-flex bg-primary shadow-3">
+            <q-toolbar-title class="ml-2">
+              <div class="q-flex items-center">
+                <q-icon
+                  :name="mdiAlertDecagram"
+                  size="sm"
+                  color="red"
+                ></q-icon>
+                <div class="font-size-18 ml-2">Connection error</div>
+              </div>
+            </q-toolbar-title>
+          </q-toolbar>
+          <div class="pa-6">
+            <div class="font-size-18">Looks like there is no Internet here. To use this app in offline mode you should be authorized and start the application online at least once.</div>
+          </div>
+        </q-card>
+      </div>
+    </q-page-container>
+    <q-page-container v-else-if="isErrorShown">
+      <ErrorPage :error="{ statusCode: globalStore.initError?.statusCode, message: globalStore.initError?.message }"></ErrorPage>
+    </q-page-container>
+    <q-page-container v-else-if="globalStore.isInitDataLoading">
+      <template v-if="$route.name === 'notes'">
+        <q-skeleton
+          class="bg-grey-3"
+          type="rect"
+          height="50px"
+        ></q-skeleton>
+        <div class="column">
+          <div class="row pa-4">
+            <q-skeleton
+              class="note bg-grey-3 ma-2"
+              v-for="index in 6"
+              :key="index"
+              type="rect"
+            ></q-skeleton>
+          </div>
+          <div class="row pa-4">
+            <q-skeleton
+              class="note bg-grey-3 ma-2"
+              v-for="index in 6"
+              :key="index"
+              type="rect"
+            ></q-skeleton>
+          </div>
+        </div>
+      </template>
+      <template v-if="['existed-note', 'new-note'].includes(String($route.name))">
+        <NotListSkeletons></NotListSkeletons>
+      </template>
+    </q-page-container>
+    <q-page-container
+      class="page pa-0"
+      v-else
+    >
+      <router-view
+        class="page-content"
+        v-slot="{ Component }"
+      >
+        <transition
+          appear
+          enter-active-class="animated slideFadeAppear"
+        >
+          <component :is="Component"></component>
+        </transition>
+      </router-view>
+    </q-page-container>
+  </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { mdiAlertDecagram } from '@quasar/extras/mdi-v6'
 import { useQuasar } from 'quasar'
-import {
-  mdiAlertDecagram,
-  mdiClose,
-} from '@quasar/extras/mdi-v6'
-import BaseService from '~/services/base'
-import NotesService from '~/composables/services/notes'
+import { computed, onMounted, ref, watch } from 'vue'
+import NotListSkeletons from '~/components/note/NotListSkeletons.vue'
 import ListItemsService from '~/composables/services/list-items'
+import NotesService from '~/composables/services/notes'
+import BaseService from '~/services/base'
+import SyncService from '~/services/sync'
 import { useGlobalStore } from '~/stores/global'
 import { type TGlobalError } from '~/types'
-import { ROUTE_SIGN } from '~/router/routes'
-import SyncService from '~/services/sync'
 
-const router = useRouter()
 const $q = useQuasar()
 
 let isNoOfflineDataError = false
@@ -144,9 +151,7 @@ watch(removedItemsQuantity, () => {
           group: false, // required to be updatable
           timeout: 0, // we want to be in control when it gets dismissed
           message: removedItemsMessage.value,
-          actions: [
-            { label: 'Restore', color: 'primary', handler: restoreItems },
-          ],
+          actions: [{ label: 'Restore', color: 'primary', handler: restoreItems }],
         })
       } else {
         notification({
@@ -177,7 +182,7 @@ watch(removedItemsQuantity, () => {
 
 watch(
   () => globalStore.initError,
-  () => isErrorShown.value = !!globalStore.initError,
+  () => (isErrorShown.value = !!globalStore.initError),
 )
 
 watch(
@@ -238,7 +243,7 @@ watch(
     position: relative;
   }
 
-  &>div {
+  & > div {
     padding-top: 50px;
     overflow-x: hidden;
   }

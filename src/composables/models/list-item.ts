@@ -10,13 +10,13 @@ const LAST_TEXTAREA = 'LAST_TEXTAREA'
 const FIRST_TEXTAREA = 'FIRST_TEXTAREA'
 
 export type TVariant = {
-  noteId: number | string,
-  listItemId: number | string,
-  text: string,
-  highlightedText: string,
-  isExists: boolean,
-  focused: boolean,
-  duplicatesQuantity?: number,
+  noteId: number | string
+  listItemId: number | string
+  text: string
+  highlightedText: string
+  isExists: boolean
+  focused: boolean
+  duplicatesQuantity?: number
 }
 
 export type TListItem = {
@@ -28,6 +28,7 @@ export type TListItem = {
   focused?: boolean
   checked?: boolean
   completed?: boolean
+  priorityTypeId?: number
   statusId?: number
   status?: TStatusModel
   created?: string
@@ -38,7 +39,7 @@ export const COUNTER_MEASUREMENT_PIECES = 'шт'
 export const COUNTER_MEASUREMENT_PACKAGES = 'уп'
 
 export default function listItemModel(listItemData: TListItem) {
-  const currentMilliseconds = (new Date()).getMilliseconds()
+  const currentMilliseconds = new Date().getMilliseconds()
   const id = ref(listItemData.id)
   const generatedId = ref(`${currentMilliseconds}-${id.value}`)
   const text = ref(listItemData.text || '')
@@ -49,6 +50,7 @@ export default function listItemModel(listItemData: TListItem) {
   const completed = ref(!!listItemData.completed || false)
   const created = ref(listItemData.created ? new Date(listItemData.created) : null)
   const updated = ref(listItemData.updated ? new Date(listItemData.updated) : null)
+  const priorityTypeId = ref(listItemData.priorityTypeId)
   const statusId = ref(listItemData.statusId || StatusesService.active.value.id)
   const isCreating = ref(false)
   const isUpdateNeeded = ref(false)
@@ -135,6 +137,7 @@ export default function listItemModel(listItemData: TListItem) {
     created,
     updated,
     statusId,
+    priorityTypeId,
     isCreating,
     isUpdateNeeded,
     saveTimeout,

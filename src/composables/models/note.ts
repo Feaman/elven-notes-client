@@ -161,7 +161,7 @@ export default function noteModel(noteData: TNote) {
         listItem.isCreating = true
         if (!id.value) {
           if (!isCreating.value) {
-            save()
+            await save()
           }
           unSavedListItems.value.push(listItem)
         } else {

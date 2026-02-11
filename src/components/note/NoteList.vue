@@ -1,186 +1,272 @@
-<template lang="pug">
-.note-list(
-  :class="{ 'note-list--focused': note?.isFocused, 'note-list--semi-focused': isSemiFocus }"
-  ref="rootElement"
-)
-  .note-list__container(
-    :class="{ 'pb-3': isMain }"
-  )
-    .note-list__list(
-      :style="{ opacity: isListReady ? 1 : 0 }"
-    )
-      draggable(
-        v-model="list"
-        :set-data="setDragGhostData"
-        :component-data="{ name: drag || globalStore.isInitialLoading ?  null : 'vertical-list' }"
-        @start="drag = true"
-        @end="drag = false"
-        tag="transition-group"
-        handle=".list-item__handle"
-        ghost-class="sortable-ghost"
-        item-key="generatedId"
-      )
-        template(
-          #item="{element}"
-        )
-          .list-item__container(
-            :class="{ 'list-item__container--focused': element.focused }"
-          )
-            .list-item.q-flex.items-center(
-              :class="{ 'list-item--checked': element.checked, 'list-item--completed': element.completed }"
-            )
-              q-icon.list-item__handle.text-grey-6(
-                :name="mdiDrag"
-                size="sm"
-              )
-
-              input.list-item__checkbox.complete-checkbox(
-                @change="complete($event, element)"
-                :checked="element.completed"
-                type="checkbox"
-              )
-
-              .list-item__text.q-flex.items-center.column.mx-1.ml-2
-                textarea.full-width.transition(
-                  @input="updateText(element, $event)"
-                  @keydown.enter="selectFocusedVariant($event)"
-                  @focus="handleFocus(element)"
-                  @blur="note.blurListItem(element)"
-                  :value="element.text"
-                  :id="element.generateTextareaRefName()"
-                )
-
-              .list-item-counter__icon.px-2.cursor-pointer(
-                v-if="note.isCountable"
-                @click="showCounterDialog(element)"
-                :class="`${note.isShowCheckedCheckboxes ? 'mr-14' : 'mr-7'}`"
-              )
-                q-icon(
-                  :name="mdiNumeric2BoxMultiple"
-                  color="purple"
-                )
-
-              input.list-item__checkbox.mr-1(
-                v-if="note.isShowCheckedCheckboxes"
-                @change="check($event, element)"
-                :checked="element.checked"
-                :class="{ 'ml-9': !element.text }"
-                type="checkbox"
-                color="secondary"
-              )
-              q-btn.list-item__remove-button(
-                @click="note.removeListItem(element)"
-                :icon="mdiTrashCanOutline"
-                color="grey-5"
-                flat
-                round
-              )
-
-    .note-list__create-button.q-flex.items-center.cursor-text.mt-2(
-      v-if="props.isMain && isListReady"
-      :class="{ 'note-list__create-button--alone': !list.length }"
-      @click="add"
-    )
-      q-icon(
-        color="grey"
-        :name="mdiPlus"
-        size="sm"
-      )
-      .text-grey.ml-2 Add item
-
-  transition(
-    appear
-    enter-active-class="animated zoomIn"
-    leave-active-class="animated zoomOut"
-  )
-    q-card.note-list__menu.shadow-6(
-      v-if="isVariantsShown"
-      :style="{ maxWidth: `${variantsMenuMaxWidth}px`,top: `${variantsMenuY}px`, left:  `${variantsMenuX}px` }"
-      ref="variantsElement"
-    )
-      q-list.list-item__variants(
-        dense
-      )
-        q-item.list-item__variant(
-          v-for="(variant, index) in variants"
-          :key="index"
-          :class="{ 'list-item__variant--focused': variant.focused }"
-          clickable v-ripple
-        )
-          q-item-section
-            .q-flex.items-center.full-width.py-1(
-              @click="selectVariant(variantsListItem, variant)"
-            )
-              .limit-width.font-size-14(v-html="variant.highlightedText")
-              q-space
-              .text-green.font-size-12.ml-2(v-if="variant.isExists") exists
-              .list-item__variant-info.text-red.font-size-12.ml-2(v-if="variant.duplicatesQuantity") •&nbsp; {{ variant.duplicatesQuantity }}
-
-  q-dialog(
-    @hide="hideCounterDialog"
-    :model-value="isCounterDialogShown"
-    :backdrop-filter="'blur(4px) brightness(60%)'"
-    transition-show="jump-right"
-    transition-hide="jump-left"
-  )
-    .list-item-counter__container.text-center.full-height.q-flex.column.no-wrap.justify-end.pa-5.mb-16(
-      @click="isCounterDialogShown = false"
-    )
-      .text-white.text-uppercase.font-size-16 Click anywhere on the shadow to close the dialog
-      .q-space
-      .list-item-counter__list-item.pa-3.mt-8(
-        v-html="counterListItem.getHighlightedCounterText()"
-      )
-      .d-flex.row.no-wrap.mt-10(
-        @click.stop
-      )
-        .list-item-counter__measurements.mt-3.ml-1.text-uppercase
-          .list-item-counter__measurement.bg-primary.px-3.text-center.cursor-pointer(
-              @click="setCounterMeasurement(COUNTER_MEASUREMENT_PIECES)"
-              :class="{ 'list-item-counter--current': counterListItem.counterMeasurement === COUNTER_MEASUREMENT_PIECES }"
-            ) {{ COUNTER_MEASUREMENT_PIECES }}
-          .list-item-counter__measurement.bg-primary.px-3.mt-3.text-center.cursor-pointer(
-              @click="setCounterMeasurement(COUNTER_MEASUREMENT_PACKAGES)"
-              :class="{ 'list-item-counter--current': counterListItem.counterMeasurement === COUNTER_MEASUREMENT_PACKAGES }"
-            ) {{ COUNTER_MEASUREMENT_PACKAGES }}
-        .list-item-counter__numbers.row.justify-end
-          .list-item-counter__quantity.bg-primary.px-3.mt-3.ml-3.cursor-pointer(
-            v-for="(quantity, index) in [1, 2, 3, 4, 5, 6, 7, 8]"
-            :key="index"
-            @click="setCounterQuantity(quantity)"
-            :class="{ 'list-item-counter--current': counterListItem.counterQuantity === quantity }"
-          ) {{ quantity }}
-      .list-item-counter__custom.row.mt-6
-        q-input.list-item-counter__custom-input.col(
-          @click.stop="$event.target.select()"
-          v-model="customQuantity"
-          type="number"
-          dark
+<template>
+  <div
+    v-if="templateNote"
+    :class="{ 'note-list--focused': templateNote.isFocused, 'note-list--semi-focused': isSemiFocus }"
+    class="note-list"
+    ref="rootElement"
+  >
+    <div
+      class="note-list__container"
+      :class="{ 'pb-3': isMain }"
+    >
+      <div
+        class="note-list__list"
+        :style="{ opacity: isListReady ? 1 : 0 }"
+      >
+        <draggable
+          v-model="list"
+          :set-data="setDragGhostData"
+          :component-data="{ name: drag || globalStore.isInitialLoading ? null : 'vertical-list' }"
+          @start="drag = true"
+          @end="drag = false"
+          tag="transition-group"
+          handle=".list-item__handle"
+          ghost-class="sortable-ghost"
+          item-key="generatedId"
+        >
+          <template #item="{ element }">
+            <div
+              class="list-item__container"
+              :class="{ 'list-item__container--focused': element.focused }"
+            >
+              <div
+                class="list-item q-flex items-center"
+                :class="{ 'list-item--checked': element.checked, 'list-item--completed': element.completed }"
+              >
+                <q-icon
+                  @click="console.log(1)"
+                  :name="mdiDrag"
+                  :color="getHandleColor(element)"
+                  class="list-item__handle"
+                  size="sm"
+                ></q-icon>
+                <input
+                  @change="complete($event, element)"
+                  :checked="element.completed"
+                  class="list-item__checkbox complete-checkbox"
+                  type="checkbox"
+                />
+                <div class="list-item__text q-flex items-center column mx-1 ml-2">
+                  <textarea
+                    class="full-width transition"
+                    @input="updateText(element, $event)"
+                    @keydown.enter="selectFocusedVariant($event)"
+                    @focus="handleFocus(element)"
+                    @blur="templateNote.blurListItem(element)"
+                    :value="element.text"
+                    :id="element.generateTextareaRefName()"
+                  ></textarea>
+                </div>
+                <q-btn
+                  v-if="templateNote.isCountable"
+                  @click="showCounterDialog(element)"
+                  :icon="mdiCog"
+                  class="cursor-pointer"
+                  color="deep-purple-4"
+                  size="12px"
+                  flat
+                  round
+                />
+                <input
+                  class="list-item__checkbox mr-1"
+                  v-if="templateNote.isShowCheckedCheckboxes"
+                  @change="check($event, element)"
+                  :checked="element.checked"
+                  :class="{ 'ml-9': !element.text }"
+                  type="checkbox"
+                  color="secondary"
+                />
+                <q-btn
+                  class="list-item__remove-button"
+                  @click="templateNote.removeListItem(element)"
+                  :icon="mdiTrashCanOutline"
+                  color="grey-5"
+                  flat
+                  round
+                ></q-btn>
+              </div>
+            </div>
+          </template>
+        </draggable>
+      </div>
+      <div
+        class="note-list__create-button q-flex items-center cursor-text mt-2"
+        v-if="props.isMain &amp;&amp; isListReady"
+        :class="{ 'note-list__create-button--alone': !list.length }"
+        @click="add"
+      >
+        <q-icon
+          color="grey"
+          :name="mdiPlus"
+          size="sm"
+        ></q-icon>
+        <div class="text-grey ml-2">Add item</div>
+      </div>
+    </div>
+    <transition
+      appear
+      enter-active-class="animated zoomIn"
+      leave-active-class="animated zoomOut"
+    >
+      <q-card
+        class="note-list__menu shadow-6"
+        v-if="isVariantsShown"
+        :style="{ maxWidth: `${variantsMenuMaxWidth}px`, top: `${variantsMenuY}px`, left: `${variantsMenuX}px` }"
+        ref="variantsElement"
+      >
+        <q-list
+          class="list-item__variants"
           dense
-          outlined
-        )
-        q-btn.list-item-counter__custom-button.bg-primary.ml-2(
-          @click.stop="setCounterQuantity(customQuantity)"
-          icon="check"
-          flat
-        )
+        >
+          <q-item
+            class="list-item__variant"
+            v-for="(variant, index) in variants"
+            :key="index"
+            :class="{ 'list-item__variant--focused': variant.focused }"
+            clickable
+            v-ripple
+          >
+            <q-item-section>
+              <div
+                class="q-flex items-center full-width py-1"
+                @click="selectVariant(variantsListItem, variant)"
+              >
+                <div
+                  class="limit-width font-size-14"
+                  v-html="variant.highlightedText"
+                ></div>
+                <q-space></q-space>
+                <div
+                  class="text-green font-size-12 ml-2"
+                  v-if="variant.isExists"
+                >
+                  exists
+                </div>
+                <div
+                  class="list-item__variant-info text-red font-size-12 ml-2"
+                  v-if="variant.duplicatesQuantity"
+                >
+                  •&nbsp; {{ variant.duplicatesQuantity }}
+                </div>
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card>
+    </transition>
+
+    <q-dialog
+      @hide="hideCounterDialog"
+      :model-value="isCounterDialogShown"
+      :backdrop-filter="'blur(4px) brightness(60%)'"
+      transition-show="jump-right"
+      transition-hide="jump-left"
+    >
+      <div
+        class="list-item-counter__container text-center full-height q-flex column no-wrap justify-end pa-5 mb-16"
+        @click="isCounterDialogShown = false"
+      >
+        <div class="text-white text-uppercase font-size-16">Click anywhere on the shadow to close the dialog</div>
+        <div class="q-space"></div>
+        <div
+          class="list-item-counter__list-item pa-3 mt-8"
+          v-html="counterListItem?.getHighlightedCounterText()"
+        ></div>
+        <div
+          class="d-flex row no-wrap mt-10"
+          @click.stop
+        >
+          <div class="list-item-counter__measurements mt-3 ml-1 text-uppercase">
+            <div
+              class="list-item-counter__measurement bg-primary px-3 text-center cursor-pointer"
+              @click="setCounterMeasurement(COUNTER_MEASUREMENT_PIECES)"
+              :class="{ 'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PIECES }"
+            >
+              {{ COUNTER_MEASUREMENT_PIECES }}
+            </div>
+            <div
+              class="list-item-counter__measurement bg-primary px-3 mt-3 text-center cursor-pointer"
+              @click="setCounterMeasurement(COUNTER_MEASUREMENT_PACKAGES)"
+              :class="{ 'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PACKAGES }"
+            >
+              {{ COUNTER_MEASUREMENT_PACKAGES }}
+            </div>
+          </div>
+          <div class="list-item-counter__numbers row justify-end">
+            <div
+              class="list-item-counter__quantity bg-primary px-3 mt-3 ml-3 cursor-pointer"
+              v-for="(quantity, index) in [1, 2, 3, 4, 5, 6, 7, 8]"
+              :key="index"
+              @click="setCounterQuantity(quantity)"
+              :class="{ 'list-item-counter--current': counterListItem?.counterQuantity === quantity }"
+            >
+              {{ quantity }}
+            </div>
+          </div>
+        </div>
+        <div class="list-item-counter__custom row mt-6">
+          <q-input
+            class="list-item-counter__custom-input col"
+            @click.stop="$event.target.select()"
+            v-model="customQuantity"
+            type="number"
+            dark
+            dense
+            outlined
+          />
+          <q-btn
+            class="list-item-counter__custom-button bg-primary ml-2"
+            @click.stop="setCounterQuantity(Number(customQuantity))"
+            icon="check"
+            flat
+          />
+        </div>
+
+        <div class="button-switches row justify-between q-mt-md">
+          <q-btn
+            @click="setPriorityType(priorityLow)"
+            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityLow.id }"
+            class="button-switch"
+            color="light-blue"
+            >{{ priorityLow.title }}</q-btn
+          >
+          <q-btn
+            @click="setPriorityType(priorityMedium)"
+            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityMedium.id }"
+            class="button-switch q-ml-md"
+            color="blue"
+            >{{ priorityMedium.title }}</q-btn
+          >
+          <q-btn
+            @click="setPriorityType(priorityHigh)"
+            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityHigh.id }"
+            class="button-switch q-ml-md"
+            color="blue"
+            >{{ priorityHigh.title }}</q-btn
+          >
+        </div>
+      </div>
+    </q-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { mdiDrag, mdiTrashCanOutline, mdiPlus, mdiNumeric2BoxMultiple } from '@quasar/extras/mdi-v6'
-import { ref, unref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { mdiCog, mdiDrag, mdiPlus, mdiTrashCanOutline } from '@quasar/extras/mdi-v6'
 import { QCard } from 'quasar'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import draggable from 'zhyswan-vuedraggable'
-import listItemModel, { type TVariant, type TListItemModel, COUNTER_MEASUREMENT_PACKAGES, COUNTER_MEASUREMENT_PIECES } from '~/composables/models/list-item'
+import { type TListItemModel, type TVariant, COUNTER_MEASUREMENT_PACKAGES, COUNTER_MEASUREMENT_PIECES } from '~/composables/models/list-item'
 import { type TNoteModel } from '~/composables/models/note'
-import NotesService from '~/composables/services/notes'
+import { TTypeModel } from '~/composables/models/type'
 import ListItemsService from '~/composables/services/list-items'
-import { useGlobalStore } from '~/stores/global'
+import NotesService from '~/composables/services/notes'
+import { priorityHigh, priorityLow, priorityMedium } from '~/composables/services/types'
 import KeyboardEvents from '~/helpers/keyboard-events'
 import BaseService from '~/services/base'
+import { useGlobalStore } from '~/stores/global'
 
 const props = defineProps<{
-  isMain?: boolean,
+  isMain?: boolean
 }>()
 
 let $root: HTMLElement | null
@@ -194,7 +280,8 @@ const isVariantsShown = ref(false)
 const variantsMenuY = ref(0)
 const variantsMenuMaxWidth = ref(0)
 const variantsListItem = ref<TListItemModel | null>(null)
-const note = NotesService.currentNote as unknown as { value: TNoteModel }
+const templateNote = NotesService.currentNote
+const note = templateNote as unknown as { value: TNoteModel }
 const globalStore = useGlobalStore()
 const isSemiFocus = ref(false)
 const variantsElement = ref<QCard | null>(null)
@@ -222,7 +309,10 @@ const list = computed({
       newWholeList.forEach((listItem, index) => {
         listItem.order = index + 1
       })
-      await NotesService.setOrder(note.value, newWholeList.map((listItem) => Number(listItem.id)))
+      await NotesService.setOrder(
+        note.value,
+        newWholeList.map((listItem) => Number(listItem.id)),
+      )
     } catch (error) {
       BaseService.eventBus.emit('showGlobalError', { statusCode: 500, message: (error as Error).message })
     }
@@ -283,7 +373,7 @@ function focusVariant(direction: string) {
     const newVariants = variants.value.map((variant) => ({ ...variant, focused: false }))
     let currentIndex = direction === 'down' ? 0 : newVariants.length - 1
     if (focusedVariant) {
-      const adding = (direction === 'down' ? 1 : -1)
+      const adding = direction === 'down' ? 1 : -1
       const currentVariantIndex = variants.value.indexOf(focusedVariant)
       currentIndex = currentVariantIndex + adding
       if (currentIndex < 0) {
@@ -406,7 +496,7 @@ function showCounterDialog(listItem: TListItemModel) {
   isCounterDialogShown.value = true
 }
 
-function hideCounterDialog(listItem: TListItemModel) {
+function hideCounterDialog() {
   counterListItem.value = undefined
   isCounterDialogShown.value = false
 }
@@ -440,11 +530,37 @@ function setDragGhostData(dataTransfer: DataTransfer) {
   dataTransfer.setDragImage(document.createElement('div'), 0, 0)
 }
 
-watch(() => isCounterDialogShown.value, async () => {
-  await nextTick()
-  const $element = document.querySelector('.list-item-counter__list-item')
-  $element?.scrollTo(0, $element.scrollHeight)
-})
+function getHandleColor(listItem: TListItemModel) {
+  if (listItem.priorityTypeId === priorityLow.value.id) {
+    return 'green'
+  }
+
+  if (listItem.priorityTypeId === priorityMedium.value.id) {
+    return 'orange-4'
+  }
+
+  if (listItem.priorityTypeId === priorityHigh.value.id) {
+    return 'red'
+  }
+
+  return 'grey'
+}
+
+function setPriorityType(priorityType: TTypeModel) {
+  if (counterListItem.value) {
+    counterListItem.value.priorityTypeId = priorityType.id
+    note.value.saveListItem(counterListItem.value)
+  }
+}
+
+watch(
+  () => isCounterDialogShown.value,
+  async () => {
+    await nextTick()
+    const $element = document.querySelector('.list-item-counter__list-item')
+    $element?.scrollTo(0, $element.scrollHeight)
+  },
+)
 </script>
 
 <style lang="scss" scoped>
@@ -505,9 +621,7 @@ watch(() => isCounterDialogShown.value, async () => {
         }
 
         &.list-item--checked {
-
           .list-item__text {
-
             &:after {
               color: $grey-4;
             }
@@ -532,7 +646,7 @@ watch(() => isCounterDialogShown.value, async () => {
         }
 
         .list-item__text {
-          max-height: 64px;
+          max-height: 78px;
           position: inherit;
           flex: 1;
           position: relative;
@@ -545,7 +659,7 @@ watch(() => isCounterDialogShown.value, async () => {
             height: 18px;
             line-height: 10px;
             position: absolute;
-            top: 46px;
+            top: 60px;
             left: 0;
             background: #fff;
             cursor: text;
@@ -573,12 +687,6 @@ watch(() => isCounterDialogShown.value, async () => {
         }
       }
     }
-  }
-
-  .list-item-counter__icon {
-    position: absolute;
-    right: 0;
-    opacity: 0.7;
   }
 
   .note-list__create-button {

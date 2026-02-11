@@ -22,17 +22,7 @@ export default class OfflineApiService implements IApi {
     return Promise.resolve(offlineData as ConfigObject)
   }
 
-  async addNote(
-    _list: TListItemModel[] | TListItem[],
-    title: string,
-    text: string,
-    typeId: number,
-    order: number,
-    isCompletedListExpanded: boolean,
-    isCountable: boolean,
-    isShowCheckedCheckboxes: boolean,
-    id?: string | number,
-  ): Promise<TNote> {
+  async addNote(_list: TListItemModel[] | TListItem[], title: string, text: string, typeId: number, order: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean, id?: string | number): Promise<TNote> {
     this.checkAuthToken()
 
     id = Number(id)
@@ -50,16 +40,13 @@ export default class OfflineApiService implements IApi {
 
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
     const currentDateTime = new Date().toISOString()
-    const offlineNoteData = Object.assign(
-      noteData,
-      {
-        id: id || `offline-${new Date().getTime()}`,
-        updated: currentDateTime,
-        created: currentDateTime,
-        userId: useGlobalStore().user?.id,
-        user: useGlobalStore().user as TUser,
-      },
-    )
+    const offlineNoteData = Object.assign(noteData, {
+      id: id || `offline-${new Date().getTime()}`,
+      updated: currentDateTime,
+      created: currentDateTime,
+      userId: useGlobalStore().user?.id,
+      user: useGlobalStore().user as TUser,
+    })
 
     offlineData.notes.push(offlineNoteData)
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
@@ -67,15 +54,7 @@ export default class OfflineApiService implements IApi {
     return Promise.resolve(offlineNoteData)
   }
 
-  async updateNote(
-    id: number | string,
-    title: string,
-    text: string,
-    typeId: number,
-    isCompletedListExpanded: boolean,
-    isCountable: boolean,
-    isShowCheckedCheckboxes: boolean,
-  ): Promise<TNote> {
+  async updateNote(id: number | string, title: string, text: string, typeId: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean): Promise<TNote> {
     this.checkAuthToken()
 
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
@@ -84,18 +63,15 @@ export default class OfflineApiService implements IApi {
       throw new Error(`[offlineApi.UpdateNote]: Note with id "${id}" not found in offline data`)
     }
 
-    Object.assign(
-      offlineNote,
-      {
-        title,
-        text,
-        typeId,
-        isCompletedListExpanded,
-        isCountable,
-        isShowCheckedCheckboxes,
-        updated: new Date().toISOString(),
-      },
-    )
+    Object.assign(offlineNote, {
+      title,
+      text,
+      typeId,
+      isCompletedListExpanded,
+      isCountable,
+      isShowCheckedCheckboxes,
+      updated: new Date().toISOString(),
+    })
 
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
 
@@ -113,13 +89,10 @@ export default class OfflineApiService implements IApi {
 
     offlineNote.list?.forEach((offlineNoteListItem: TListItem) => {
       if (!offlineNoteListItem.completed && offlineNoteListItem.checked) {
-        Object.assign(
-          offlineNoteListItem,
-          {
-            updated: new Date().toISOString(),
-            completed: 1,
-          },
-        )
+        Object.assign(offlineNoteListItem, {
+          updated: new Date().toISOString(),
+          completed: 1,
+        })
       }
     })
 
@@ -179,6 +152,7 @@ export default class OfflineApiService implements IApi {
       order: listItem.order,
       completed: listItem.completed,
       statusId: StatusesService.active.value.id,
+      priorityTypeId: listItem.priorityTypeId,
     } as TListItem
 
     const offlineNote = offlineData.notes.find((offlineNote) => offlineNote.id === listItem.noteId)
@@ -209,16 +183,14 @@ export default class OfflineApiService implements IApi {
       throw new Error(`[offlineApi.updateListItem]: Offline note list item with id "${listItem.id}" not found in offline data`)
     }
 
-    Object.assign(
-      offlineNoteListItem,
-      {
-        text: listItem.text,
-        checked: listItem.checked,
-        order: listItem.order,
-        updated: new Date().toISOString(),
-        completed: listItem.completed,
-      },
-    )
+    Object.assign(offlineNoteListItem, {
+      text: listItem.text,
+      checked: listItem.checked,
+      order: listItem.order,
+      updated: new Date().toISOString(),
+      completed: listItem.completed,
+      priorityTypeId: listItem.priorityTypeId,
+    })
 
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
 
