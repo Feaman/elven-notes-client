@@ -5,6 +5,7 @@ import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
 import KeyboardEvents from '~/helpers/keyboard-events'
 import SwipeEvents, { LEFT_SWIPE_WIDTH } from '~/helpers/swipe-events'
+import { priorityLow } from './types'
 
 const removingListItems = ref<TListItemModel[]>([])
 const listItemMinHeight = 36
@@ -61,15 +62,14 @@ function focusNextItem(event: KeyboardEvent, isCompletedList: boolean) {
 }
 
 async function addListItem(note: TNoteModel, data: TListItem | undefined = undefined) {
-  const listItem = listItemModel(
-    {
-      updated: String(new Date()),
-      statusId: StatusesService.active.value.id,
-      text: '',
-      order: note.list.length ? Math.max(...note.list.map((listItem) => listItem.order)) + 1 : 1,
-      ...(data || {}),
-    },
-  )
+  const listItem = listItemModel({
+    updated: String(new Date()),
+    statusId: StatusesService.active.value.id,
+    priorityTypeId: priorityLow.value.id,
+    text: '',
+    order: note.list.length ? Math.max(...note.list.map((listItem) => listItem.order)) + 1 : 1,
+    ...(data || {}),
+  })
   note.addListItem(listItem as unknown as TListItemModel)
   const unRefListItem = note.list.find((_listItem) => _listItem.generatedId === listItem.generatedId.value)
 
@@ -169,9 +169,7 @@ function addTextareaSwipeEvent(note: TNoteModel, listItem: TListItemModel, which
 function generateMaxOrder(listItemId: number, list: TListItemModel[]) {
   let order = 0
   if (list.length) {
-    const numbers = list
-      .filter((_listItem) => _listItem.id !== listItemId)
-      .map((listItem) => listItem.order)
+    const numbers = list.filter((_listItem) => _listItem.id !== listItemId).map((listItem) => listItem.order)
     order = Math.max(...numbers)
   }
 

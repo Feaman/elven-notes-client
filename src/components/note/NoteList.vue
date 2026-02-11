@@ -34,9 +34,8 @@
                 :class="{ 'list-item--checked': element.checked, 'list-item--completed': element.completed }"
               >
                 <q-icon
-                  @click="console.log(1)"
                   :name="mdiDrag"
-                  :color="getHandleColor(element)"
+                  color="grey"
                   class="list-item__handle"
                   size="sm"
                 ></q-icon>
@@ -62,7 +61,7 @@
                   @click="showCounterDialog(element)"
                   :icon="mdiCog"
                   class="cursor-pointer"
-                  color="deep-purple-4"
+                  :color="getPriorityColor(element)"
                   size="12px"
                   flat
                   round
@@ -530,7 +529,7 @@ function setDragGhostData(dataTransfer: DataTransfer) {
   dataTransfer.setDragImage(document.createElement('div'), 0, 0)
 }
 
-function getHandleColor(listItem: TListItemModel) {
+function getPriorityColor(listItem: TListItemModel) {
   if (listItem.priorityTypeId === priorityLow.value.id) {
     return 'green'
   }
@@ -548,7 +547,7 @@ function getHandleColor(listItem: TListItemModel) {
 
 function setPriorityType(priorityType: TTypeModel) {
   if (counterListItem.value) {
-    counterListItem.value.priorityTypeId = priorityType.id
+    counterListItem.value.priorityTypeId = counterListItem.value.priorityTypeId === priorityType.id ? undefined : priorityType.id
     note.value.saveListItem(counterListItem.value)
   }
 }
