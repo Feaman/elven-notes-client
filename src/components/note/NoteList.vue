@@ -60,8 +60,8 @@
                   v-if="templateNote.isCountable"
                   @click="showCounterDialog(element)"
                   :icon="mdiCog"
-                  class="cursor-pointer"
                   :color="getPriorityColor(element)"
+                  class="cursor-pointer"
                   size="12px"
                   flat
                   round
@@ -228,6 +228,7 @@
             :class="{ 'button--active': counterListItem?.priorityTypeId === priorityLow.id }"
             class="button-switch"
             color="green"
+            size="14px"
             >{{ priorityLow.title }}</q-btn
           >
           <q-btn
@@ -235,6 +236,7 @@
             :class="{ 'button--active': counterListItem?.priorityTypeId === priorityMedium.id }"
             class="button-switch q-ml-md"
             color="orange-4"
+            size="14px"
             >{{ priorityMedium.title }}</q-btn
           >
           <q-btn
@@ -242,6 +244,7 @@
             :class="{ 'button--active': counterListItem?.priorityTypeId === priorityHigh.id }"
             class="button-switch q-ml-md"
             color="red"
+            size="14px"
             >{{ priorityHigh.title }}</q-btn
           >
         </div>

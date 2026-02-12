@@ -27,5 +27,21 @@ body {
 }
 
 .button--active {
-  box-shadow: 0 0 10px #fff;
+  --angle: 0deg;
+  border: 2px solid;
+  border-image: conic-gradient(from var(--angle), rgb(255, 123, 0), yellow, lime, aqua, rgb(143, 143, 255), magenta, rgb(255, 123, 0)) 1;
+
+  animation: 5s rotate linear infinite;
+}
+
+@keyframes rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
