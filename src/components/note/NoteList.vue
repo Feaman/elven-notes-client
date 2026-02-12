@@ -65,6 +65,7 @@
                   size="12px"
                   flat
                   round
+                  dense
                 />
                 <input
                   class="list-item__checkbox mr-1"
@@ -221,26 +222,26 @@
           />
         </div>
 
-        <div class="button-switches row justify-between q-mt-md">
+        <div class="row justify-between q-mt-md">
           <q-btn
             @click="setPriorityType(priorityLow)"
-            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityLow.id }"
+            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityLow.id }"
             class="button-switch"
-            color="light-blue"
+            color="green"
             >{{ priorityLow.title }}</q-btn
           >
           <q-btn
             @click="setPriorityType(priorityMedium)"
-            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityMedium.id }"
+            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityMedium.id }"
             class="button-switch q-ml-md"
-            color="blue"
+            color="orange-4"
             >{{ priorityMedium.title }}</q-btn
           >
           <q-btn
             @click="setPriorityType(priorityHigh)"
-            :class="{ 'button-switch--active': counterListItem?.priorityTypeId === priorityHigh.id }"
+            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityHigh.id }"
             class="button-switch q-ml-md"
-            color="blue"
+            color="red"
             >{{ priorityHigh.title }}</q-btn
           >
         </div>
@@ -547,7 +548,7 @@ function getPriorityColor(listItem: TListItemModel) {
 
 function setPriorityType(priorityType: TTypeModel) {
   if (counterListItem.value) {
-    counterListItem.value.priorityTypeId = counterListItem.value.priorityTypeId === priorityType.id ? undefined : priorityType.id
+    counterListItem.value.priorityTypeId = priorityType.id
     note.value.saveListItem(counterListItem.value)
   }
 }

@@ -19,20 +19,13 @@ body {
   max-height: calc(100vh - 48px) !important;
 }
 
-.button-switches {
-  width: 100%;
-  display: flex;
-  flex-wrap: nowrap;
+.button-switch {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 15px;
+}
 
-  .button-switch {
-    min-height: 32px;
-    height: 32px;
-    padding: 0 8px;
-    font-size: 15px;
-
-    &.button-switch--active {
-      background-color: #c300ff !important;
-      box-shadow: 0 0 5px #fff;
-    }
-  }
+.button--active {
+  box-shadow: 0 0 10px #fff;
 }
