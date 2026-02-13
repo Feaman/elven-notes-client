@@ -91,7 +91,7 @@
       </div>
       <div
         class="note-list__create-button q-flex items-center cursor-text mt-2"
-        v-if="props.isMain &amp;&amp; isListReady"
+        v-if="props.isMain && isListReady"
         :class="{ 'note-list__create-button--alone': !list.length }"
         @click="add"
       >
@@ -180,14 +180,18 @@
             <div
               class="list-item-counter__measurement bg-primary px-3 text-center cursor-pointer"
               @click="setCounterMeasurement(COUNTER_MEASUREMENT_PIECES)"
-              :class="{ 'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PIECES }"
+              :class="{
+                'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PIECES,
+              }"
             >
               {{ COUNTER_MEASUREMENT_PIECES }}
             </div>
             <div
               class="list-item-counter__measurement bg-primary px-3 mt-3 text-center cursor-pointer"
               @click="setCounterMeasurement(COUNTER_MEASUREMENT_PACKAGES)"
-              :class="{ 'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PACKAGES }"
+              :class="{
+                'list-item-counter--current': counterListItem?.counterMeasurement === COUNTER_MEASUREMENT_PACKAGES,
+              }"
             >
               {{ COUNTER_MEASUREMENT_PACKAGES }}
             </div>
@@ -258,7 +262,12 @@ import { mdiCog, mdiDrag, mdiPlus, mdiTrashCanOutline } from '@quasar/extras/mdi
 import { QCard } from 'quasar'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import draggable from 'zhyswan-vuedraggable'
-import { type TListItemModel, type TVariant, COUNTER_MEASUREMENT_PACKAGES, COUNTER_MEASUREMENT_PIECES } from '~/composables/models/list-item'
+import {
+  type TListItemModel,
+  type TVariant,
+  COUNTER_MEASUREMENT_PACKAGES,
+  COUNTER_MEASUREMENT_PIECES,
+} from '~/composables/models/list-item'
 import { type TNoteModel } from '~/composables/models/note'
 import { TTypeModel } from '~/composables/models/type'
 import ListItemsService from '~/composables/services/list-items'

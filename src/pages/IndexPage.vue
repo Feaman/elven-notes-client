@@ -48,11 +48,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import draggable from 'zhyswan-vuedraggable'
-import NotesService from '~/composables/services/notes'
 import { type TNoteModel } from '~/composables/models/note'
-import { useGlobalStore } from '~/stores/global'
+import NotesService from '~/composables/services/notes'
 import BaseService from '~/services/base'
+import { useGlobalStore } from '~/stores/global'
 
 const { filtered } = NotesService
 const rootElement = ref<HTMLElement | null>(null)

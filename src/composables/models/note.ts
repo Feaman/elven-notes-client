@@ -73,15 +73,17 @@ export default function noteModel(noteData: TNote) {
   }
 
   function handleCoAuthors(coAuthorsData: TCoAuthor[] = []) {
-    coAuthorsData.forEach((coAuthorData) => coAuthors.value.push(coAuthorModel(coAuthorData) as unknown as TCoAuthorModel))
+    coAuthorsData.forEach((coAuthorData) =>
+      coAuthors.value.push(coAuthorModel(coAuthorData) as unknown as TCoAuthorModel),
+    )
   }
 
   async function handleListItem(listItem: TListItemModel) {
     listItem.noteId = id.value
     const data = await BaseService.api.addListItem(listItem)
     listItem.id = data.id
-    listItem.handleDataTransformation()
     listItem.isCreating = false
+    listItem.handleDataTransformation()
     if (listItem.isUpdateNeeded) {
       const data = await BaseService.api.updateListItem(listItem)
       listItem.updated = new Date(data.updated || '')
@@ -93,17 +95,42 @@ export default function noteModel(noteData: TNote) {
     try {
       isSaving.value = true
       if (id.value) {
-        await BaseService.api.updateNote(id.value, title.value.trim(), text.value.trim(), typeId.value, isCompletedListExpanded.value, isCountable.value, isShowCheckedCheckboxes.value)
+        await BaseService.api.updateNote(
+          id.value,
+          title.value.trim(),
+          text.value.trim(),
+          typeId.value,
+          isCompletedListExpanded.value,
+          isCountable.value,
+          isShowCheckedCheckboxes.value,
+        )
       } else if (isCreating.value) {
         isUpdateNeeded.value = true
       } else {
         isCreating.value = true
-        const noteData = await BaseService.api.addNote(list.value, title.value.trim(), text.value.trim(), typeId.value, order.value, isCompletedListExpanded.value, isCountable.value, isShowCheckedCheckboxes.value)
+        const noteData = await BaseService.api.addNote(
+          list.value,
+          title.value.trim(),
+          text.value.trim(),
+          typeId.value,
+          order.value,
+          isCompletedListExpanded.value,
+          isCountable.value,
+          isShowCheckedCheckboxes.value,
+        )
         id.value = noteData.id
         userId.value = noteData.user?.id
         isCreating.value = false
         if (isUpdateNeeded.value && id.value) {
-          await BaseService.api.updateNote(id.value, title.value.trim(), text.value.trim(), typeId.value, isCompletedListExpanded.value, isCountable.value, isShowCheckedCheckboxes.value)
+          await BaseService.api.updateNote(
+            id.value,
+            title.value.trim(),
+            text.value.trim(),
+            typeId.value,
+            isCompletedListExpanded.value,
+            isCountable.value,
+            isShowCheckedCheckboxes.value,
+          )
           isUpdateNeeded.value = false
         }
         unSavedListItems.value.forEach((listItem) => handleListItem(listItem))
@@ -122,10 +149,6 @@ export default function noteModel(noteData: TNote) {
 
   async function saveListItem(listItem: TListItemModel) {
     try {
-      if (!list.value.includes(listItem)) {
-        debugger
-        throw new Error(`List item with id "${listItem.id}" doesn't exists in note "${id.value}" list`)
-      }
       isSaving.value = true
       if (listItem.id) {
         const data = await BaseService.api.updateListItem(listItem)
@@ -166,8 +189,10 @@ export default function noteModel(noteData: TNote) {
   const isFocused = computed(() => !!list.value.find((listItem) => listItem.focused))
 
   function filterAndSort(completed = false) {
+    const filterCallback = (listItem: TListItemModel) =>
+      (completed ? listItem.completed : !listItem.completed) && listItem.statusId === StatusesService.active.value.id
     return list.value
-      .filter((listItem) => (completed ? listItem.completed : !listItem.completed) && listItem.statusId === StatusesService.active.value.id)
+      .filter(filterCallback)
       .sort((previousItem, nextItem) => ((previousItem.order || 0) < (nextItem.order || 0) ? -1 : 1))
       .sort((previousItem, nextItem) => {
         if (previousItem.checked === nextItem.checked) {
@@ -177,12 +202,18 @@ export default function noteModel(noteData: TNote) {
       })
   }
 
-  const checkedListItems = computed(() => list.value.filter((listItem) => listItem.checked && !listItem.completed && listItem.statusId === StatusesService.active.value.id)) as Ref<TListItemModel[]>
+  const checkedListItems = computed(() =>
+    list.value.filter(
+      (listItem) => listItem.checked && !listItem.completed && listItem.statusId === StatusesService.active.value.id,
+    ),
+  ) as Ref<TListItemModel[]>
 
   const mainListItems = computed(() => filterAndSort()) as Ref<TListItemModel[]>
 
   const completedListItems = computed(() => filterAndSort(true)) as Ref<TListItemModel[]>
-  const activeListItems = computed(() => list.value.filter((listItem) => listItem.statusId === StatusesService.active.value.id))
+  const activeListItems = computed(() =>
+    list.value.filter((listItem) => listItem.statusId === StatusesService.active.value.id),
+  )
 
   function addCoAuthor(coAuthor: TCoAuthorModel) {
     coAuthors.value.push(coAuthor)
@@ -297,7 +328,9 @@ export default function noteModel(noteData: TNote) {
 
     if (coAuthorsData) {
       coAuthors.value = []
-      coAuthorsData.forEach((coAuthorData) => coAuthors.value.push(coAuthorModel(coAuthorData) as unknown as TCoAuthorModel))
+      coAuthorsData.forEach((coAuthorData) =>
+        coAuthors.value.push(coAuthorModel(coAuthorData) as unknown as TCoAuthorModel),
+      )
     }
   }
 

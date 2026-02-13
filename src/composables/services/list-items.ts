@@ -1,5 +1,5 @@
 import { nextTick, ref } from 'vue'
-import listItemModel, { TListItem, TListItemModel } from '~/composables/models/list-item'
+import listItemModel, { TListItemModel } from '~/composables/models/list-item'
 import { type TNoteModel } from '~/composables/models/note'
 import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
@@ -61,14 +61,13 @@ function focusNextItem(event: KeyboardEvent, isCompletedList: boolean) {
   event.preventDefault()
 }
 
-async function addListItem(note: TNoteModel, data: TListItem | undefined = undefined) {
+async function addListItem(note: TNoteModel) {
   const listItem = listItemModel({
     updated: String(new Date()),
     statusId: StatusesService.active.value.id,
     priorityTypeId: priorityLow.value.id,
     text: '',
     order: note.list.length ? Math.max(...note.list.map((listItem) => listItem.order)) + 1 : 1,
-    ...(data || {}),
   })
   note.addListItem(listItem as unknown as TListItemModel)
   const unRefListItem = note.list.find((_listItem) => _listItem.generatedId === listItem.generatedId.value)
@@ -77,18 +76,14 @@ async function addListItem(note: TNoteModel, data: TListItem | undefined = undef
     throw new Error('List item to unref not found')
   }
 
-  if (!data) {
-    await note.saveListItem(unRefListItem as unknown as TListItemModel)
-  }
+  await note.saveListItem(unRefListItem as unknown as TListItemModel)
 
   // Handle textarea events
   await nextTick()
   const $textarea = listItem.getTextarea()
   addTextareaSwipeEvent(note, unRefListItem as unknown as TListItemModel)
   addTextareaKeydownEvent($textarea, unRefListItem.completed)
-  if (!data) {
-    $textarea.focus()
-  }
+  $textarea.focus()
 
   return listItem
 }

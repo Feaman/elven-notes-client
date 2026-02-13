@@ -20,7 +20,7 @@
           :key="i"
           :class="{ checked: listItem.checked }"
         >
-          •
+          <span class="text-grey-8">•</span>
           <div
             class="list-item__text limit-width ml-1"
             :class="{

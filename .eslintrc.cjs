@@ -66,6 +66,8 @@ module.exports = {
     'no-void': 'off',
     'no-nested-ternary': 'off',
     'max-classes-per-file': 'off',
+    'function-paren-newline': 'off',
+    'implicit-arrow-linebreak': 'off',
 
     'no-shadow': 'off',
 

@@ -22,7 +22,17 @@ export default class OfflineApiService implements IApi {
     return Promise.resolve(offlineData as ConfigObject)
   }
 
-  async addNote(_list: TListItemModel[] | TListItem[], title: string, text: string, typeId: number, order: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean, id?: string | number): Promise<TNote> {
+  async addNote(
+    _list: TListItemModel[] | TListItem[],
+    title: string,
+    text: string,
+    typeId: number,
+    order: number,
+    isCompletedListExpanded: boolean,
+    isCountable: boolean,
+    isShowCheckedCheckboxes: boolean,
+    id?: string | number,
+  ): Promise<TNote> {
     this.checkAuthToken()
 
     id = Number(id)
@@ -54,7 +64,15 @@ export default class OfflineApiService implements IApi {
     return Promise.resolve(offlineNoteData)
   }
 
-  async updateNote(id: number | string, title: string, text: string, typeId: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean): Promise<TNote> {
+  async updateNote(
+    id: number | string,
+    title: string,
+    text: string,
+    typeId: number,
+    isCompletedListExpanded: boolean,
+    isCountable: boolean,
+    isShowCheckedCheckboxes: boolean,
+  ): Promise<TNote> {
     this.checkAuthToken()
 
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
@@ -173,14 +191,22 @@ export default class OfflineApiService implements IApi {
     this.checkAuthToken()
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
 
-    const offlineNote = offlineData.notes.find((offlineNote) => offlineNote.id === listItem.noteId) as TNoteModel | undefined
+    const offlineNote = offlineData.notes.find((offlineNote) => offlineNote.id === listItem.noteId) as
+      | TNoteModel
+      | undefined
     if (!offlineNote) {
-      throw new Error(`[offlineApi.updateListItem]: Offline note with id "${listItem.noteId}" not found in offline data`)
+      throw new Error(
+        `[offlineApi.updateListItem]: Offline note with id "${listItem.noteId}" not found in offline data`,
+      )
     }
 
-    const offlineNoteListItem = offlineNote.list.find((offlineNoteListItem) => offlineNoteListItem.id === listItem.id) as TListItem | undefined
+    const offlineNoteListItem = offlineNote.list.find(
+      (offlineNoteListItem) => offlineNoteListItem.id === listItem.id,
+    ) as TListItem | undefined
     if (!offlineNoteListItem) {
-      throw new Error(`[offlineApi.updateListItem]: Offline note list item with id "${listItem.id}" not found in offline data`)
+      throw new Error(
+        `[offlineApi.updateListItem]: Offline note list item with id "${listItem.id}" not found in offline data`,
+      )
     }
 
     Object.assign(offlineNoteListItem, {
@@ -203,12 +229,18 @@ export default class OfflineApiService implements IApi {
 
     const offlineNote = offlineData.notes.find((offlineNote) => offlineNote.id === listItem.noteId) as TNote | undefined
     if (!offlineNote) {
-      throw new Error(`[offlineApi.RemoveListItem]: Offline note with id "${listItem.noteId}" not found in offline data`)
+      throw new Error(
+        `[offlineApi.RemoveListItem]: Offline note with id "${listItem.noteId}" not found in offline data`,
+      )
     }
 
-    const offlineNoteListItem = offlineNote.list?.find((offlineNoteListItem) => offlineNoteListItem.id === listItem.id) as TListItem | undefined
+    const offlineNoteListItem = offlineNote.list?.find(
+      (offlineNoteListItem) => offlineNoteListItem.id === listItem.id,
+    ) as TListItem | undefined
     if (!offlineNoteListItem) {
-      throw new Error(`[offlineApi.RemoveListItem]: Offline note list item with id "${listItem.noteId}" not found in offline data`)
+      throw new Error(
+        `[offlineApi.RemoveListItem]: Offline note list item with id "${listItem.noteId}" not found in offline data`,
+      )
     }
 
     if (completely) {
@@ -230,9 +262,13 @@ export default class OfflineApiService implements IApi {
       throw new Error(`[offlineApi.restoreListItem]: Offline note with id "${noteId}" not found in offline data`)
     }
 
-    const offlineNoteListItem = offlineNote.list.find((offlineNoteListItem) => offlineNoteListItem.id === listItemId) as TListItem | undefined
+    const offlineNoteListItem = offlineNote.list.find(
+      (offlineNoteListItem) => offlineNoteListItem.id === listItemId,
+    ) as TListItem | undefined
     if (!offlineNoteListItem) {
-      throw new Error(`[offlineApi.restoreListItem]: Offline note list item with id "${listItemId}" not found in offline data`)
+      throw new Error(
+        `[offlineApi.restoreListItem]: Offline note list item with id "${listItemId}" not found in offline data`,
+      )
     }
 
     offlineNoteListItem.statusId = StatusesService.active.value.id
@@ -268,7 +304,9 @@ export default class OfflineApiService implements IApi {
     order.forEach(async (listItemId: number, index: number) => {
       const offlineListItem = offlineNote.list?.find((listItem: TListItem) => listItem.id === listItemId)
       if (!offlineListItem) {
-        throw new Error(`[offlineApi.setListItemsOrder]: Offline note list item with id "${listItemId}" not found in offline data`)
+        throw new Error(
+          `[offlineApi.setListItemsOrder]: Offline note list item with id "${listItemId}" not found in offline data`,
+        )
       }
       offlineListItem.order = index + 1
       offlineListItem.updated = new Date().toISOString()
@@ -284,7 +322,9 @@ export default class OfflineApiService implements IApi {
     order.forEach(async (noteId: number, index: number) => {
       const offlineNote = offlineData.notes.find((note) => note.id === noteId)
       if (!offlineNote) {
-        throw new Error(`[offlineApi.setNotesOrder]: Offline note list item with id "${noteId}" not found in offline data`)
+        throw new Error(
+          `[offlineApi.setNotesOrder]: Offline note list item with id "${noteId}" not found in offline data`,
+        )
       }
       offlineNote.order = index + 1
       offlineNote.updated = new Date().toISOString()
