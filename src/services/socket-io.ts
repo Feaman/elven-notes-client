@@ -171,7 +171,15 @@ export default class SocketIOService extends BaseService {
         if (note) {
           const listItem = note.list.find((listItem) => listItem.id === listItemData.id)
           if (listItem) {
-            Object.assign(listItem, { text: listItemData.text, checked: listItemData.checked, completed: listItemData.completed })
+            Object.assign(
+              listItem,
+              {
+                text: listItemData.text,
+                checked: listItemData.checked,
+                completed: listItemData.completed,
+                priorityTypeId: listItemData.priorityTypeId,
+              },
+            )
           }
         }
 

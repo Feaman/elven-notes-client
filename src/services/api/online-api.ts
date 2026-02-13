@@ -19,7 +19,16 @@ export default class OnlineApiService implements IApi {
     return data as ConfigObject
   }
 
-  async addNote(list: TListItemModel[] | TListItem[], title: string, text: string, typeId: number, order: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean): Promise<TNote> {
+  async addNote(
+    list: TListItemModel[] | TListItem[],
+    title: string,
+    text: string,
+    typeId: number,
+    order: number,
+    isCompletedListExpanded: boolean,
+    isCountable: boolean,
+    isShowCheckedCheckboxes: boolean,
+  ): Promise<TNote> {
     const noteData = {
       title,
       text,
@@ -45,7 +54,15 @@ export default class OnlineApiService implements IApi {
     return data as TNote
   }
 
-  async updateNote(id: number | string, title: string, text: string, typeId: number, isCompletedListExpanded: boolean, isCountable: boolean, isShowCheckedCheckboxes: boolean): Promise<TNote> {
+  async updateNote(
+    id: number | string,
+    title: string,
+    text: string,
+    typeId: number,
+    isCompletedListExpanded: boolean,
+    isCountable: boolean,
+    isShowCheckedCheckboxes: boolean,
+  ): Promise<TNote> {
     const noteData = {
       title,
       text,

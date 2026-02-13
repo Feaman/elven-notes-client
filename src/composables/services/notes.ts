@@ -30,6 +30,7 @@ function generateNotes(notesData: TNote[]) {
           existingListItem.order = newListItem.order
           existingListItem.checked = newListItem.checked
           existingListItem.completed = newListItem.completed
+          existingListItem.priorityTypeId = newListItem.priorityTypeId
         } else {
           existingNote.list.push(newListItem)
           setTimeout(() => {
