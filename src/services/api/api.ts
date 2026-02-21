@@ -147,35 +147,31 @@ export default class ApiService implements IApi {
   }
 
   async signIn(email: string, password: string): Promise<ConfigObject> {
-    if (!useGlobalStore().isOnline) {
-      await this.onlineApiService.signIn(email, password)
+    if (useGlobalStore().isOnline) {
+      return this.onlineApiService.signIn(email, password)
     }
-
-    return this.offlineApiService.signIn()
+    throw new Error('This action is not available in offline mode')
   }
 
   async signUp(email: string, password: string, firstName: string, secondName: string): Promise<ConfigObject> {
-    if (!useGlobalStore().isOnline) {
-      await this.onlineApiService.signUp(email, password, firstName, secondName)
+    if (useGlobalStore().isOnline) {
+      return this.onlineApiService.signUp(email, password, firstName, secondName)
     }
-
-    return this.offlineApiService.signUp()
+    throw new Error('This action is not available in offline mode')
   }
 
   async addNoteCoAuthor(noteId: number, email: string): Promise<TCoAuthor> {
-    if (!useGlobalStore().isOnline) {
-      await this.onlineApiService.addNoteCoAuthor(noteId, email)
+    if (useGlobalStore().isOnline) {
+      return this.onlineApiService.addNoteCoAuthor(noteId, email)
     }
-
-    return this.offlineApiService.addNoteCoAuthor()
+    throw new Error('This action is not available in offline mode')
   }
 
   async removeNoteCoAuthor(coAuthor: TCoAuthor) {
-    if (!useGlobalStore().isOnline) {
-      await this.onlineApiService.removeNoteCoAuthor(coAuthor)
+    if (useGlobalStore().isOnline) {
+      return this.onlineApiService.removeNoteCoAuthor(coAuthor)
     }
-
-    return this.offlineApiService.removeNoteCoAuthor()
+    throw new Error('This action is not available in offline mode')
   }
 
   async setListItemsOrder(note: TNoteModel | TNote, order: number[]) {
@@ -193,7 +189,7 @@ export default class ApiService implements IApi {
   }
 
   async updateUser() {
-    if (!useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline) {
       await this.onlineApiService.updateUser()
     }
 

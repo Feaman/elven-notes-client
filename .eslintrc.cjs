@@ -71,6 +71,7 @@ module.exports = {
 
     'no-shadow': 'off',
 
+    'linebreak-style': 'off',
     'import/first': 'off',
     'import/named': 'error',
     'import/namespace': 'error',
