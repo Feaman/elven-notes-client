@@ -23,7 +23,7 @@ function handleListItemTextAreaHeight($textArea: HTMLTextAreaElement) {
   $textArea.style.height = `${textAreaHeight}px`
   $textArea.style.minHeight = `${textAreaHeight}px`
 
-  if (textAreaHeight > 64) {
+  if (textAreaHeight > 70) {
     $parent?.classList.add('list-item__text--multi-line')
   }
 }
