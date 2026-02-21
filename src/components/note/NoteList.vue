@@ -671,7 +671,7 @@ watch(
             height: 18px;
             line-height: 10px;
             position: absolute;
-            top: 60px;
+            top: 64px;
             left: 0;
             background: #fff;
             cursor: text;
