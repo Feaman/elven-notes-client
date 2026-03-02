@@ -7,7 +7,7 @@ import userModel, { TUser, TUserModel } from '~/composables/models/user'
 import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
-import TypesService from '~/composables/services/types'
+import TypesService, { priorityLow } from '~/composables/services/types'
 import OfflineApiService from '~/services/api/offline-api'
 import BaseService from '~/services/base'
 import { useGlobalStore } from '~/stores/global'
@@ -296,6 +296,7 @@ export default function noteModel(noteData: TNote) {
       existentListItem.completed = false
       existentListItem.checked = false
       existentListItem.order = listItem.order
+      existentListItem.priorityTypeId = priorityLow.value.id
       saveListItem(existentListItem)
       removeListItem(listItem, false)
       return existentListItem
