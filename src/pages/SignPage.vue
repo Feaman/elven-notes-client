@@ -31,7 +31,6 @@
             q-input.q-mt-lg(
               v-model="email"
               label="Email"
-              type="email"
               :maxlength="RULE_1024_LENGTH"
               counter
               clearable
@@ -39,7 +38,6 @@
             )
             q-input.q-mt-lg(
               v-model="password"
-              type="password"
               label="Password"
               :maxlength="RULE_155_LENGTH"
               counter
@@ -116,12 +114,11 @@
 </template>
 
 <script setup lang="ts">
-import { AxiosError } from 'axios'
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import UsersService from '~/composables/services/users'
-import StorageService from '~/services/storage'
 import KeyboardEvents from '~/helpers/keyboard-events'
+import StorageService from '~/services/storage'
 import { useGlobalStore } from '~/stores/global'
 
 const isTokenExists = StorageService.get(UsersService.AUTH_TOKEN_NAME)
