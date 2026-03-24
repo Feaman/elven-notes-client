@@ -39,6 +39,7 @@
             q-input.q-mt-lg(
               v-model="password"
               label="Password"
+              type="password"
               :maxlength="RULE_155_LENGTH"
               counter
               clearable
@@ -55,7 +56,6 @@
             q-input.q-mt-lg(
               v-model="email"
               label="Email"
-              type="email"
               :maxlength="RULE_155_LENGTH"
               counter
               clearable
