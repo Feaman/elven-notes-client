@@ -19,21 +19,6 @@ body {
   max-height: calc(100vh - 48px) !important;
 }
 
-.button-switch {
-  min-height: 32px;
-  height: 32px;
-  padding: 0 8px;
-  font-size: 15px;
-}
-
-.button--active {
-  --angle: 0deg;
-  border: 2px solid;
-  border-image: conic-gradient(from var(--angle), rgb(255, 123, 0), yellow, lime, aqua, rgb(143, 143, 255), magenta, rgb(255, 123, 0)) 1;
-
-  animation: 5s rotate linear infinite;
-}
-
 @keyframes rotate {
   to {
     --angle: 360deg;

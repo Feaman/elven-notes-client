@@ -72,7 +72,6 @@
                   v-if="templateNote.isShowCheckedCheckboxes"
                   @change="check($event, element)"
                   :checked="element.checked"
-                  :class="{ 'ml-9': !element.text }"
                   type="checkbox"
                   color="secondary"
                 />
@@ -229,7 +228,7 @@
         <div class="row justify-between q-mt-md">
           <q-btn
             @click="setPriorityType(priorityLow)"
-            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityLow.id }"
+            :class="{ 'button--active button--active-green': counterListItem?.priorityTypeId === priorityLow.id }"
             class="button-switch"
             color="green"
             size="14px"
@@ -237,15 +236,15 @@
           >
           <q-btn
             @click="setPriorityType(priorityMedium)"
-            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityMedium.id }"
+            :class="{ 'button--active button--active-orange': counterListItem?.priorityTypeId === priorityMedium.id }"
             class="button-switch q-ml-md"
-            color="orange-4"
+            color="orange"
             size="14px"
             >{{ priorityMedium.title }}</q-btn
           >
           <q-btn
             @click="setPriorityType(priorityHigh)"
-            :class="{ 'button--active': counterListItem?.priorityTypeId === priorityHigh.id }"
+            :class="{ 'button--active button--active-red': counterListItem?.priorityTypeId === priorityHigh.id }"
             class="button-switch q-ml-md"
             color="red"
             size="14px"
@@ -766,6 +765,30 @@ watch(
       border: 1px solid #ffffff;
       box-sizing: border-box;
     }
+  }
+}
+
+.button-switch {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+.button--active {
+  opacity: 1;
+
+  &.button--active-green {
+    box-shadow: 0 0 10px 5px $green;
+  }
+
+  &.button--active-orange {
+    box-shadow: 0 0 10px 5px $orange;
+  }
+
+  &.button--active-red {
+    box-shadow: 0 0 10px 5px $red;
   }
 }
 </style>
