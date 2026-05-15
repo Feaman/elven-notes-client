@@ -33,6 +33,7 @@ export default class ApiService implements IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
   ): Promise<TNote> {
     let serverNote: TNote | undefined
     let noteId
@@ -46,6 +47,7 @@ export default class ApiService implements IApi {
         isCompletedListExpanded,
         isCountable,
         isShowCheckedCheckboxes,
+        isPrioritySort,
       )
       noteId = serverNote.id
     }
@@ -58,6 +60,7 @@ export default class ApiService implements IApi {
       isCompletedListExpanded,
       isCountable,
       isShowCheckedCheckboxes,
+      isPrioritySort,
       noteId,
     )
   }
@@ -70,6 +73,7 @@ export default class ApiService implements IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
   ): Promise<TNote> {
     if (useGlobalStore().isOnline) {
       await this.onlineApiService.updateNote(
@@ -80,6 +84,7 @@ export default class ApiService implements IApi {
         isCompletedListExpanded,
         isCountable,
         isShowCheckedCheckboxes,
+        isPrioritySort,
       )
     }
     return this.offlineApiService.updateNote(
@@ -90,6 +95,7 @@ export default class ApiService implements IApi {
       isCompletedListExpanded,
       isCountable,
       isShowCheckedCheckboxes,
+      isPrioritySort,
     )
   }
 

@@ -25,6 +25,7 @@ export default interface IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
   ): Promise<TNote>
 
   updateNote(
@@ -35,6 +36,7 @@ export default interface IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
   ): Promise<TNote>
 
   removeNote(note: TNoteModel | TNote): Promise<TNoteModel | TNote>

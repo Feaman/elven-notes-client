@@ -17,6 +17,7 @@
           v-model="list"
           :set-data="setDragGhostData"
           :component-data="{ name: drag || globalStore.isInitialLoading ? null : 'vertical-list' }"
+          :disabled="templateNote.isPrioritySort"
           @start="drag = true"
           @end="drag = false"
           tag="transition-group"
@@ -34,6 +35,7 @@
                 :class="{ 'list-item--checked': element.checked, 'list-item--completed': element.completed }"
               >
                 <q-icon
+                  v-if="!templateNote.isPrioritySort"
                   :name="mdiDrag"
                   color="grey"
                   class="list-item__handle"

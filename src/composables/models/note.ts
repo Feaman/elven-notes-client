@@ -7,7 +7,7 @@ import userModel, { TUser, TUserModel } from '~/composables/models/user'
 import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
-import TypesService, { priorityLow } from '~/composables/services/types'
+import TypesService, { priorityHigh, priorityLow, priorityMedium } from '~/composables/services/types'
 import OfflineApiService from '~/services/api/offline-api'
 import BaseService from '~/services/base'
 import { useGlobalStore } from '~/stores/global'
@@ -26,6 +26,7 @@ export type TNote = {
   isCompletedListExpanded?: boolean
   isCountable?: boolean
   isShowCheckedCheckboxes?: boolean
+  isPrioritySort?: boolean
   list?: TListItem[]
   coAuthors?: TCoAuthor[]
   created?: string
@@ -53,6 +54,7 @@ export default function noteModel(noteData: TNote) {
   const isCompletedListExpanded = ref(!!noteData.isCompletedListExpanded)
   const isCountable = ref(!!noteData.isCountable)
   const isShowCheckedCheckboxes = ref(!!noteData.isShowCheckedCheckboxes)
+  const isPrioritySort = ref(!!noteData.isPrioritySort)
   const isCreating = ref(false)
   const isUpdateNeeded = ref(false)
   const unSavedListItems = ref<TListItemModel[]>([])
@@ -103,6 +105,7 @@ export default function noteModel(noteData: TNote) {
           isCompletedListExpanded.value,
           isCountable.value,
           isShowCheckedCheckboxes.value,
+          isPrioritySort.value,
         )
       } else if (isCreating.value) {
         isUpdateNeeded.value = true
@@ -117,6 +120,7 @@ export default function noteModel(noteData: TNote) {
           isCompletedListExpanded.value,
           isCountable.value,
           isShowCheckedCheckboxes.value,
+          isPrioritySort.value,
         )
         id.value = noteData.id
         userId.value = noteData.user?.id
@@ -130,6 +134,7 @@ export default function noteModel(noteData: TNote) {
             isCompletedListExpanded.value,
             isCountable.value,
             isShowCheckedCheckboxes.value,
+            isPrioritySort.value,
           )
           isUpdateNeeded.value = false
         }
@@ -188,11 +193,41 @@ export default function noteModel(noteData: TNote) {
 
   const isFocused = computed(() => !!list.value.find((listItem) => listItem.focused))
 
+  function getPriorityWeight(priorityTypeId?: number) {
+    if (priorityTypeId === priorityHigh.value.id) return 0
+    if (priorityTypeId === priorityMedium.value.id) return 1
+    if (priorityTypeId === priorityLow.value.id) return 2
+    return 3
+  }
+
   function filterAndSort(completed = false) {
     const filterCallback = (listItem: TListItemModel) =>
       (completed ? listItem.completed : !listItem.completed) && listItem.statusId === StatusesService.active.value.id
-    return list.value
-      .filter(filterCallback)
+    const filtered = list.value.filter(filterCallback)
+
+    if (isPrioritySort.value) {
+      if (completed) {
+        return filtered
+          .sort((previousItem, nextItem) => ((previousItem.order || 0) > (nextItem.order || 0) ? -1 : 1))
+          .sort((previousItem, nextItem) => {
+            if (previousItem.checked === nextItem.checked) {
+              return 0
+            }
+            return previousItem.checked ? 1 : -1
+          })
+      }
+      return filtered
+        .sort((previousItem, nextItem) => ((previousItem.order || 0) < (nextItem.order || 0) ? -1 : 1))
+        .sort((previousItem, nextItem) => getPriorityWeight(previousItem.priorityTypeId) - getPriorityWeight(nextItem.priorityTypeId))
+        .sort((previousItem, nextItem) => {
+          if (previousItem.checked === nextItem.checked) {
+            return 0
+          }
+          return previousItem.checked ? 1 : -1
+        })
+    }
+
+    return filtered
       .sort((previousItem, nextItem) => ((previousItem.order || 0) < (nextItem.order || 0) ? -1 : 1))
       .sort((previousItem, nextItem) => {
         if (previousItem.checked === nextItem.checked) {
@@ -352,6 +387,7 @@ export default function noteModel(noteData: TNote) {
   watch(isCompletedListExpanded, () => updateOnChange(save))
   watch(isCountable, () => updateOnChange(save))
   watch(isShowCheckedCheckboxes, () => updateOnChange(save))
+  watch(isPrioritySort, () => updateOnChange(save))
   watch(isRawUpdate, (value) => (isRawUpdate.value = value))
 
   return {
@@ -384,6 +420,7 @@ export default function noteModel(noteData: TNote) {
     isLocalModel,
     isCountable,
     isShowCheckedCheckboxes,
+    isPrioritySort,
     filterAndSort,
     checkOrUncheckListItem,
     addCoAuthor,

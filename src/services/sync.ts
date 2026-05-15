@@ -64,6 +64,7 @@ export default class SyncService extends BaseService {
               !!offlineNote.isCompletedListExpanded,
               !!offlineNote.isCountable,
               !!offlineNote.isShowCheckedCheckboxes,
+              !!offlineNote.isPrioritySort,
             )
             offlineNote.id = newNote.id
             offlineNote.updated = newNote.updated
@@ -130,6 +131,7 @@ export default class SyncService extends BaseService {
                 !!offlineNote.isCompletedListExpanded,
                 !!offlineNote.isCountable,
                 !!offlineNote.isShowCheckedCheckboxes,
+                !!offlineNote.isPrioritySort,
               )
               offlineNote.updated = updatedOnlineNote.updated
             }

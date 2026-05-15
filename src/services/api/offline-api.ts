@@ -31,6 +31,7 @@ export default class OfflineApiService implements IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
     id?: string | number,
   ): Promise<TNote> {
     this.checkAuthToken()
@@ -45,6 +46,7 @@ export default class OfflineApiService implements IApi {
       isCompletedListExpanded,
       isCountable,
       isShowCheckedCheckboxes,
+      isPrioritySort,
       statusId: StatusesService.active.value.id,
     }
 
@@ -72,6 +74,7 @@ export default class OfflineApiService implements IApi {
     isCompletedListExpanded: boolean,
     isCountable: boolean,
     isShowCheckedCheckboxes: boolean,
+    isPrioritySort: boolean,
   ): Promise<TNote> {
     this.checkAuthToken()
 
@@ -88,6 +91,7 @@ export default class OfflineApiService implements IApi {
       isCompletedListExpanded,
       isCountable,
       isShowCheckedCheckboxes,
+      isPrioritySort,
       updated: new Date().toISOString(),
     })
 

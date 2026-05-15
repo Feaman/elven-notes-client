@@ -68,6 +68,19 @@
                       ></q-toggle>
                     </q-item-section>
                   </q-item>
+                  <q-item
+                    class="pl-1"
+                    clickable
+                  >
+                    <q-item-section>
+                      <q-toggle
+                        v-model="templateNote.isPrioritySort"
+                        label="Sort by priority"
+                        color="blue"
+                        v-close-popup
+                      ></q-toggle>
+                    </q-item-section>
+                  </q-item>
                 </q-list>
               </q-menu>
             </q-btn>
