@@ -287,10 +287,36 @@ export default function noteModel(noteData: TNote) {
     }
   }
 
-  function completeListItem(listItem: TListItemModel, isCompleted: boolean) {
+  async function normalizeOrder() {
+    if (!id.value) {
+      return
+    }
+    const activeItems = list.value.filter((listItem) => listItem.statusId === StatusesService.active.value.id)
+    if (!activeItems.length) {
+      return
+    }
+    const sortedByOrder = [...activeItems].sort((previousItem, nextItem) => (previousItem.order || 0) - (nextItem.order || 0))
+    const isAlreadyNormalized = sortedByOrder.every((listItem, index) => listItem.order === index + 1)
+    if (isAlreadyNormalized) {
+      return
+    }
+    const numericIds = sortedByOrder
+      .map((listItem) => Number(listItem.id))
+      .filter((listItemId) => !Number.isNaN(listItemId))
+    if (numericIds.length !== sortedByOrder.length) {
+      return
+    }
+    sortedByOrder.forEach((listItem, index) => {
+      listItem.order = index + 1
+    })
+    await BaseService.api.setListItemsOrder({ id: id.value } as TNoteModel, numericIds)
+  }
+
+  async function completeListItem(listItem: TListItemModel, isCompleted: boolean) {
     listItem.completed = isCompleted
     listItem.order = ListItemsService.generateMaxOrder(Number(id.value), list.value)
-    saveListItem(listItem)
+    await saveListItem(listItem)
+    await normalizeOrder()
   }
 
   async function completeAllChecked() {
