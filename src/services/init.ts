@@ -74,4 +74,16 @@ export default class InitService extends BaseService {
     NotesService.notes.value = []
     globalStore.user = null
   }
+
+  static async clearLocalNotesData(): Promise<void> {
+    StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: undefined })
+    NotesService.notes.value = []
+    NotesService.removingNotes.value = []
+    NotesService.currentNote.value = null
+
+    const globalStore = useGlobalStore()
+    if (globalStore.isOnline) {
+      await this.initApplication()
+    }
+  }
 }
