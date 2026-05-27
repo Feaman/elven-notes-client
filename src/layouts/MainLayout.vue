@@ -158,6 +158,12 @@ onMounted(() => {
   setTimeout(() => {
     globalStore.isInitialLoading = false
   }, 1000)
+
+  const $splash = document.getElementById('initial-splash')
+  if ($splash) {
+    $splash.classList.add('is-hidden')
+    setTimeout(() => $splash.remove(), 300)
+  }
 })
 
 watch(removedItemsQuantity, () => {

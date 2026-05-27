@@ -15,8 +15,67 @@
     <link rel="yandex-tableau-widget" href="manifest.json">
     <link rel="icon" type="image/ico" href="favicon.ico">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap">
+    <style>
+      #initial-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: #fff;
+        opacity: 1;
+        transition: opacity 250ms ease-out;
+      }
+      #initial-splash.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .initial-splash__header {
+        height: 50px;
+        background-color: #e0e0e0;
+        animation: splash-shimmer 1.5s ease-in-out infinite;
+      }
+      .initial-splash__grid {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 16px;
+      }
+      .initial-splash__card {
+        flex: 1;
+        min-width: 250px;
+        max-width: 300px;
+        height: 260px;
+        margin: 8px;
+        background-color: #e0e0e0;
+        animation: splash-shimmer 1.5s ease-in-out infinite;
+      }
+      @keyframes splash-shimmer {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+      @media (max-width: 700px) {
+        .initial-splash__card {
+          min-width: 148px;
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="initial-splash" aria-hidden="true">
+      <div class="initial-splash__header"></div>
+      <div class="initial-splash__grid">
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+        <div class="initial-splash__card"></div>
+      </div>
+    </div>
     <!-- quasar:entry-point -->
   </body>
 </html>

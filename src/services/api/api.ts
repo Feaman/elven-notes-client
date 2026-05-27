@@ -108,7 +108,11 @@ export default class ApiService implements IApi {
 
   async completeNote(id: number | string): Promise<TNote> {
     if (useGlobalStore().isOnline && !isOfflineId(id)) {
-      await this.onlineApiService.completeNote(id)
+      // Server's response is the authoritative list of completed items —
+      // another device may have toggled checks that we don't see locally.
+      // Mirror that exact state into the offline blob.
+      const serverNoteData = await this.onlineApiService.completeNote(id)
+      return this.offlineApiService.applyCompletedNote(serverNoteData)
     }
     return this.offlineApiService.completeNote(id)
   }

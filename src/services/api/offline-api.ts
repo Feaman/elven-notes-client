@@ -123,6 +123,39 @@ export default class OfflineApiService implements IApi {
     return Promise.resolve(offlineNote)
   }
 
+  // Reconciles the offline blob with the server's view of a completed note.
+  // Used after the server has finished the completion (either via our own
+  // request response or a socket broadcast), so we trust serverNoteData.list
+  // rather than the local `checked` heuristic — another device may have
+  // toggled items we don't have locally checked.
+  async applyCompletedNote(serverNoteData: TNote): Promise<TNote> {
+    this.checkAuthToken()
+
+    const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
+    const offlineNote = offlineData.notes.find((note) => note.id === serverNoteData.id)
+    if (!offlineNote) {
+      throw new Error(`[offlineApi.applyCompletedNote]: Note with id "${serverNoteData.id}" not found in offline data`)
+    }
+
+    serverNoteData.list?.forEach((serverListItemData: TListItem) => {
+      const offlineListItem = offlineNote.list?.find((item) => item.id === serverListItemData.id)
+      if (!offlineListItem) {
+        return
+      }
+      const isServerCompleted = !!serverListItemData.completed
+      if (isServerCompleted !== !!offlineListItem.completed) {
+        Object.assign(offlineListItem, {
+          completed: isServerCompleted,
+          updated: serverListItemData.updated || new Date().toISOString(),
+        })
+      }
+    })
+
+    StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
+
+    return Promise.resolve(offlineNote)
+  }
+
   async removeNote(note: TNoteModel | TNote, completely = false) {
     this.checkAuthToken()
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject

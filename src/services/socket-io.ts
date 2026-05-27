@@ -112,19 +112,22 @@ export default class SocketIOService extends BaseService {
 
     socket.on(this.EVENT_NOTE_COMPLETED, async (noteData: TNote) => {
       try {
-        // Change note
-        const note = NotesService.notes.value.find((note) => note.id === noteData.id)
+        // The broadcast carries the server's full list. Trust it over the
+        // local `checked` heuristic — items might have been toggled on
+        // another device, so we may not even have them locally checked.
+        const note = NotesService.notes.value.find((memoryNote) => memoryNote.id === noteData.id)
         if (note) {
-          note.list?.forEach((listItem: TListItemModel) => {
-            if (!listItem.completed && listItem.checked) {
-              listItem.completed = true
+          noteData.list?.forEach((serverListItemData: TListItem) => {
+            const listItem = note.list.find((memoryListItem) => memoryListItem.id === serverListItemData.id)
+            if (listItem && !!serverListItemData.completed !== listItem.completed) {
+              listItem.completed = !!serverListItemData.completed
             }
           })
         }
 
-        // Change offline note
+        // Mirror the same authoritative state into the offline blob.
         const offlineApi = new OfflineApiService()
-        await offlineApi.completeNote(Number(noteData.id))
+        await offlineApi.applyCompletedNote(noteData)
       } catch (error) {
         BaseService.eventBus.emit('showGlobalError', { statusCode: 500, message: (error as Error).message })
       }

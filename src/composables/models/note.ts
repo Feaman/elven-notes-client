@@ -8,7 +8,6 @@ import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
 import TypesService, { priorityHigh, priorityLow, priorityMedium } from '~/composables/services/types'
-import OfflineApiService from '~/services/api/offline-api'
 import BaseService from '~/services/base'
 import { useGlobalStore } from '~/stores/global'
 
@@ -332,19 +331,23 @@ export default function noteModel(noteData: TNote) {
 
   async function completeAllChecked() {
     if (id.value) {
+      // Optimistic local update so the UI feels instant.
       list.value.forEach((listItem: TListItemModel) => {
         if (!listItem.completed && listItem.checked) {
           listItem.completed = true
         }
       })
-      const noteData = await BaseService.api.completeNote(id.value)
-      noteData.list?.forEach((listItem) => {
-        listItem.completed = true
+      // ApiService.completeNote already fans out to the offline blob via
+      // applyCompletedNote, so we don't write to the offline storage here.
+      const serverNoteData = await BaseService.api.completeNote(id.value)
+      // Reconcile in case the server completed items we didn't see locally
+      // (another device may have toggled checks we don't have).
+      serverNoteData.list?.forEach((serverListItemData) => {
+        const listItem = list.value.find((item) => item.id === serverListItemData.id)
+        if (listItem) {
+          listItem.completed = !!serverListItemData.completed
+        }
       })
-
-      // Change offline note
-      const offlineApi = new OfflineApiService()
-      await offlineApi.completeNote(Number(noteData.id))
     }
   }
 
