@@ -6,6 +6,14 @@ import IApi, { ConfigObject } from './interface'
 import OfflineApiService from './offline-api'
 import OnlineApiService from './online-api'
 
+// Entities created while offline carry a synthetic `offline-<timestamp>` id
+// until SyncService promotes them. Calls that target such an id must skip
+// the online endpoint — the server doesn't know the synthetic id yet and
+// would 404. SyncService handles eventual consistency on the next merge.
+function isOfflineId(id?: number | string): boolean {
+  return typeof id === 'string' && id.indexOf('offline') === 0
+}
+
 export default class ApiService implements IApi {
   onlineApiService
 
@@ -35,10 +43,9 @@ export default class ApiService implements IApi {
     isShowCheckedCheckboxes: boolean,
     isPrioritySort: boolean,
   ): Promise<TNote> {
-    let serverNote: TNote | undefined
     let noteId
     if (useGlobalStore().isOnline) {
-      serverNote = await this.onlineApiService.addNote(
+      const serverNote = await this.onlineApiService.addNote(
         list,
         title,
         text,
@@ -75,7 +82,7 @@ export default class ApiService implements IApi {
     isShowCheckedCheckboxes: boolean,
     isPrioritySort: boolean,
   ): Promise<TNote> {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(id)) {
       await this.onlineApiService.updateNote(
         id,
         title,
@@ -100,44 +107,43 @@ export default class ApiService implements IApi {
   }
 
   async completeNote(id: number | string): Promise<TNote> {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(id)) {
       await this.onlineApiService.completeNote(id)
     }
     return this.offlineApiService.completeNote(id)
   }
 
   async removeNote(note: TNoteModel | TNote) {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(note.id)) {
       await this.onlineApiService.removeNote(note)
     }
     return this.offlineApiService.removeNote(note)
   }
 
   async restoreNote(noteId: number | string) {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(noteId)) {
       await this.onlineApiService.restoreNote(noteId)
     }
     return this.offlineApiService.restoreNote(noteId)
   }
 
   async addListItem(listItem: TListItemModel): Promise<TListItem> {
-    let serverListItem: TListItem | undefined
-    if (useGlobalStore().isOnline) {
-      serverListItem = await this.onlineApiService.addListItem(listItem)
+    if (useGlobalStore().isOnline && !isOfflineId(listItem.noteId)) {
+      const serverListItem = await this.onlineApiService.addListItem(listItem)
       listItem.id = serverListItem.id
     }
     return this.offlineApiService.addListItem(listItem)
   }
 
   async updateListItem(listItem: TListItemModel): Promise<TListItem> {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(listItem.id) && !isOfflineId(listItem.noteId)) {
       await this.onlineApiService.updateListItem(listItem)
     }
     return this.offlineApiService.updateListItem(listItem)
   }
 
   async removeListItem(listItem: TListItemModel | TListItem, completely = false) {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(listItem.id) && !isOfflineId(listItem.noteId)) {
       await this.onlineApiService.removeListItem(listItem, completely)
     }
 
@@ -145,7 +151,7 @@ export default class ApiService implements IApi {
   }
 
   async restoreListItem(noteId: number | string, listItemId: number | string) {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(noteId) && !isOfflineId(listItemId)) {
       await this.onlineApiService.restoreListItem(noteId, listItemId)
     }
 
@@ -181,7 +187,7 @@ export default class ApiService implements IApi {
   }
 
   async setListItemsOrder(note: TNoteModel | TNote, order: number[]) {
-    if (useGlobalStore().isOnline) {
+    if (useGlobalStore().isOnline && !isOfflineId(note.id)) {
       await this.onlineApiService.setListItemsOrder(note, order)
     }
     return this.offlineApiService.setListItemsOrder(note, order)

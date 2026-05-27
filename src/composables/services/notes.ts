@@ -1,5 +1,5 @@
-import { Ref, computed, ref } from 'vue'
-import { TListItemModel, type TVariant } from '~/composables/models/list-item'
+import { Ref, computed, nextTick, ref } from 'vue'
+import listItemModel, { TListItemModel, type TVariant } from '~/composables/models/list-item'
 import noteModel, { TNote, TNoteModel } from '~/composables/models/note'
 import StatusesService from '~/composables/services/statuses'
 import BaseService from '~/services/base'
@@ -17,25 +17,51 @@ function isInFlightEntity(entity: { id?: number | string, isCreating?: boolean }
 function generateNotes(notesData: TNote[]) {
   // Update existing notes
   notesData.forEach((noteData: TNote) => {
-    const newNote = noteModel(noteData)
-    const existingNote = notes.value.find((_note) => _note.id === newNote.id.value)
+    const existingNote = notes.value.find((_note) => _note.id === noteData.id)
     if (existingNote) {
-      existingNote.title = newNote.title.value
-      existingNote.text = newNote.text.value
-      existingNote.typeId = newNote.typeId.value
-      existingNote.statusId = newNote.statusId.value
-      existingNote.order = newNote.order.value
+      // Suppress field watchers (which would otherwise echo the same data
+      // back to the server via save) while we merge the server snapshot.
+      // Reset on nextTick so any async watchers scheduled by these
+      // assignments see the flag as still true and skip themselves.
+      existingNote.isRawUpdate = true
+      existingNote.title = noteData.title || ''
+      existingNote.text = noteData.text || ''
+      if (noteData.typeId !== undefined) {
+        existingNote.typeId = noteData.typeId
+      }
+      if (noteData.statusId !== undefined) {
+        existingNote.statusId = noteData.statusId
+      }
+      existingNote.order = noteData.order
+      existingNote.isCompletedListExpanded = !!noteData.isCompletedListExpanded
+      existingNote.isCountable = !!noteData.isCountable
+      existingNote.isShowCheckedCheckboxes = !!noteData.isShowCheckedCheckboxes
+      existingNote.isPrioritySort = !!noteData.isPrioritySort
+      if (noteData.updated) {
+        existingNote.updated = new Date(noteData.updated)
+      }
+      nextTick(() => {
+        existingNote.isRawUpdate = false
+      })
 
-      // Update existing list items
-      newNote.list.value.forEach((newListItem) => {
-        const existingListItem = existingNote.list.find((_listItem) => _listItem.id === newListItem.id)
+      // Update existing list items / append new ones
+      const newListItemsData = noteData.list || []
+      newListItemsData.forEach((newListItemData) => {
+        const existingListItem = existingNote.list.find((_listItem) => _listItem.id === newListItemData.id)
         if (existingListItem) {
-          existingListItem.text = newListItem.text
-          existingListItem.order = newListItem.order
-          existingListItem.checked = newListItem.checked
-          existingListItem.completed = newListItem.completed
-          existingListItem.priorityTypeId = newListItem.priorityTypeId
+          existingListItem.text = newListItemData.text || ''
+          existingListItem.order = newListItemData.order || 0
+          existingListItem.checked = !!newListItemData.checked
+          existingListItem.completed = !!newListItemData.completed
+          existingListItem.priorityTypeId = newListItemData.priorityTypeId
+          if (newListItemData.statusId !== undefined) {
+            existingListItem.statusId = newListItemData.statusId
+          }
+          if (newListItemData.updated) {
+            existingListItem.updated = new Date(newListItemData.updated)
+          }
         } else {
+          const newListItem = listItemModel(newListItemData) as unknown as TListItemModel
           existingNote.list.push(newListItem)
           setTimeout(() => {
             ListItemsService.handleListItemTextAreaHeight(newListItem.getTextarea())
@@ -47,8 +73,9 @@ function generateNotes(notesData: TNote[]) {
       // otherwise typing into a brand-new item races with sync and throws "listItem not found")
       existingNote.list = existingNote.list.filter((listItem) =>
         isInFlightEntity(listItem)
-        || (noteData.list || []).find((newNoteData) => newNoteData.id === listItem.id))
+        || newListItemsData.find((newListItemData) => newListItemData.id === listItem.id))
     } else {
+      const newNote = noteModel(noteData)
       notes.value.push(newNote as unknown as TNoteModel)
     }
   })

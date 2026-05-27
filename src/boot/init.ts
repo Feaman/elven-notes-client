@@ -62,9 +62,9 @@ export default boot(async ({ app }) => {
     } else {
       if (isDocumentFocused !== false) {
         HealthService.stop()
+        SyncService.removeRemovedEntities()
       }
       isDocumentFocused = false
-      SyncService.removeRemovedEntities()
     }
   }, 100)
 

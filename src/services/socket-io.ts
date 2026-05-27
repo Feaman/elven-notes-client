@@ -120,8 +120,6 @@ export default class SocketIOService extends BaseService {
               listItem.completed = true
             }
           })
-          await nextTick()
-          note.isRawUpdate = false
         }
 
         // Change offline note

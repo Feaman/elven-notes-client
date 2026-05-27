@@ -77,6 +77,8 @@ import NotListSkeletons from '~/components/note/NotListSkeletons.vue'
 import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
 import BaseService from '~/services/base'
+import HealthService from '~/services/health'
+import InitService from '~/services/init'
 import SyncService from '~/services/sync'
 import { useGlobalStore } from '~/stores/global'
 import { type TGlobalError } from '~/types'
@@ -118,8 +120,17 @@ function handleHideOfflineError() {
 
 async function handleCheckConnection() {
   try {
-    await SyncService.synchronizeOfflineData()
-    isNoOfflineDataError.value = false
+    // The dialog is shown precisely when there is no offline blob, so calling
+    // synchronizeOfflineData directly would crash on `offlineData.notes`.
+    // Re-probe connectivity, then run full init — it knows how to bootstrap
+    // from the server when nothing is cached locally.
+    await HealthService.check(HealthService.SHORT_TIMEOUT_MS)
+    if (globalStore.isOnline) {
+      await InitService.initApplication()
+      if (!globalStore.isNoOfflineDataError) {
+        isNoOfflineDataError.value = false
+      }
+    }
   } catch (error) {
     BaseService.showError(error as Error)
   }

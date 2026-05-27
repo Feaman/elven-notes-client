@@ -38,6 +38,7 @@ export default class InitService extends BaseService {
         globalStore.isNoOfflineDataError = true
         return
       }
+      globalStore.isNoOfflineDataError = false
 
       TypesService.generateTypes(data.types)
       StatusesService.generateStatuses(data.statuses)
@@ -47,14 +48,23 @@ export default class InitService extends BaseService {
         if (!offlineData) {
           StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: data })
         } else {
-          SyncService.synchronizeOfflineData(data)
+          // Wait for the merge so offline-only changes (e.g. a list item added
+          // while offline) are pushed to the server and promoted from
+          // `offline-*` to real ids before we rebuild the UI. Otherwise
+          // generateNotes runs against the unmerged server snapshot and
+          // filters out the in-memory `offline-*` item — it disappears until
+          // the next focus-driven re-sync brings it back.
+          await SyncService.synchronizeOfflineData(data)
+          const syncedOfflineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
+          data.notes = syncedOfflineData.notes
         }
       }
 
       NotesService.generateNotes(data.notes)
 
       globalStore.setUser(data.user)
-      SyncService.clearRemovedOfflineNotesAndListItems()
+      // synchronizeOfflineData already runs clearRemovedOfflineNotesAndListItems
+      // at its start, so no second pass is needed here.
 
       const currentNoteId = NotesService.currentNote.value?.id
       if (this.router.currentRoute.value.name === ROUTE_EXISTED_NOTE && currentNoteId) {

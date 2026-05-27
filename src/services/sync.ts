@@ -1,5 +1,5 @@
 import { TListItem } from '~/composables/models/list-item'
-import { TNote } from '~/composables/models/note'
+import noteModel, { TNote, TNoteModel } from '~/composables/models/note'
 import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
 import StatusesService from '~/composables/services/statuses'
@@ -15,6 +15,10 @@ import StorageService from './storage'
 export default class SyncService extends BaseService {
   static async synchronizeOfflineData(data?: ConfigObject) {
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
+    if (!offlineData || !offlineData.notes) {
+      // Nothing to reconcile; bootstrapping from the server is InitService's job.
+      return
+    }
     const onlineApi = new OnlineApiService()
     let onlineNotesToRemove: TNote[] = []
     let offlineNotesToRemove: TNote[] = []
@@ -52,6 +56,7 @@ export default class SyncService extends BaseService {
         if (!onlineNote) {
           // Create online note
           if (String(offlineNote.id).indexOf('offline') === 0) {
+            const previousOfflineNoteId = offlineNote.id
             const offlineNoteList = offlineNote.list
             offlineNote.list = []
             // eslint-disable-next-line no-await-in-loop
@@ -68,16 +73,6 @@ export default class SyncService extends BaseService {
             )
             offlineNote.id = newNote.id
             offlineNote.updated = newNote.updated
-            if (
-              [ROUTE_EXISTED_NOTE, ROUTE_NEW].includes(
-                String(this.router.currentRoute.value.name),
-              )
-            ) {
-              this.router.push(`/note/${newNote.id}`)
-              if (NotesService.currentNote.value?.id) {
-                NotesService.currentNote.value.id = newNote.id
-              }
-            }
 
             // Create online list items
             if (offlineNoteList) {
@@ -95,6 +90,35 @@ export default class SyncService extends BaseService {
                 offlineNote.list.push(offlineListItem)
               }
             }
+
+            // Rebuild the UI model from the synced offline data. The model that
+            // was created offline holds Vue refs whose `id`/`noteId` still point
+            // at the old `offline-*` values across the note and every list item;
+            // patching them one-by-one races with the reactive merge in
+            // generateNotes and ends up dropping items from the visible list.
+            // A wholesale rebuild keeps reactivity coherent and lets
+            // generateNotes match by the new numeric ids without any migration.
+            const uiNoteIndex = NotesService.notes.value.findIndex(
+              (note) => note.id === previousOfflineNoteId,
+            )
+            if (uiNoteIndex !== -1) {
+              const wasCurrentNote = NotesService.currentNote.value
+                === NotesService.notes.value[uiNoteIndex]
+              const replacementNote = noteModel(offlineNote) as unknown as TNoteModel
+              replacementNote.handleDataTransformation()
+              NotesService.notes.value.splice(uiNoteIndex, 1, replacementNote)
+              if (wasCurrentNote) {
+                NotesService.currentNote.value = replacementNote
+              }
+            }
+
+            if (
+              [ROUTE_EXISTED_NOTE, ROUTE_NEW].includes(
+                String(this.router.currentRoute.value.name),
+              )
+            ) {
+              this.router.push(`/note/${newNote.id}`)
+            }
           } else {
             offlineNotesToRemove.push(offlineNote)
           }
@@ -108,14 +132,20 @@ export default class SyncService extends BaseService {
             )
           }
           if (new Date(offlineNote.updated) < new Date(onlineNote.updated)) {
-            // Update offline note
+            // Server has a newer version of the note (including its list);
+            // accept the server snapshot wholesale and skip the per-item loop —
+            // Object.assign aliases offlineNote.list to onlineNote.list, so any
+            // subsequent per-item processing would be a no-op anyway.
             Object.assign(offlineNote, onlineNote)
+            // eslint-disable-next-line no-continue
+            continue
           } else if (
             new Date(offlineNote.updated) > new Date(onlineNote.updated)
           ) {
             // Remove both offline and online note
             if (offlineNote.statusId === StatusesService.inactive.value.id) {
-              onlineApi.removeNote(offlineNote)
+              // eslint-disable-next-line no-await-in-loop
+              await onlineApi.removeNote(offlineNote)
               offlineNotesToRemove.push(offlineNote)
               onlineNotesToRemove.push(onlineNote)
               // eslint-disable-next-line no-continue
@@ -152,14 +182,29 @@ export default class SyncService extends BaseService {
               )
             if (!onlineListItem) {
               if (String(offlineListItem.id).indexOf('offline') === 0) {
-                // Add online list item
+                // Promote this offline-only list item to the server. After we get
+                // the real id, mirror it into the in-memory model so subsequent
+                // edits hit the real endpoint (not PUT /list-items/offline-*)
+                // and incoming socket events with the server id match by id.
+                const previousOfflineListItemId = offlineListItem.id
                 // eslint-disable-next-line no-await-in-loop
                 const newListItem = await onlineApi.addListItem(offlineListItem)
                 offlineListItem.id = newListItem.id
                 offlineListItem.updated = newListItem.updated
+                const inMemoryNote = NotesService.notes.value.find(
+                  (memoryNote) => memoryNote.id === offlineNote.id,
+                )
+                const inMemoryListItem = inMemoryNote?.list.find(
+                  (memoryListItem) => memoryListItem.id === previousOfflineListItemId,
+                )
+                if (inMemoryListItem) {
+                  inMemoryListItem.id = newListItem.id
+                  inMemoryListItem.updated = new Date(newListItem.updated || '')
+                }
               } else {
-                // Remove offline list item
-                offlineNote.list.splice(listItemIndex, 1)
+                // Orphan: gone from the server, never created locally. Defer
+                // the splice so we do not corrupt indices mid-iteration.
+                offlineListItemsToRemove.push(offlineListItem)
               }
             } else {
               if (!offlineListItem.updated || !onlineListItem.updated) {
@@ -275,36 +320,27 @@ export default class SyncService extends BaseService {
 
   static clearRemovedOfflineNotesAndListItems() {
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
-    const offlineNotesIndicesToRemove: number[] = []
-    const offlineListItemsIndicesToRemove: number[] = []
-    offlineData.notes.forEach((offlineNote: TNote, index: number) => {
-      if (
-        String(offlineNote.id).indexOf('offline') === 0
-        && offlineNote.statusId === StatusesService.inactive.value.id
-        && new Date().getTime() - new Date(String(offlineNote.updated)).getTime()
-          > 5000
-      ) {
-        offlineNotesIndicesToRemove.push(index)
-      } else if (offlineNote.list) {
-        offlineNote.list.forEach((offlineListItem) => {
-          if (
-            String(offlineListItem.id).indexOf('offline') === 0
-            && offlineListItem.statusId === StatusesService.inactive.value.id
-            && new Date().getTime()
-              - new Date(String(offlineListItem.updated)).getTime()
-              > 5000
-          ) {
-            offlineListItemsIndicesToRemove.push(index)
-          }
-        })
+    if (!offlineData || !offlineData.notes) {
+      return
+    }
+    const inactiveStatusId = StatusesService.inactive.value.id
+    const tombstoneExpirationMs = 5000
+    const currentTimestampMs = new Date().getTime()
+
+    const isExpiredOfflineTombstone = (entity: TNote | TListItem) =>
+      String(entity.id).indexOf('offline') === 0
+      && entity.statusId === inactiveStatusId
+      && currentTimestampMs - new Date(String(entity.updated)).getTime() > tombstoneExpirationMs
+
+    offlineData.notes = offlineData.notes.filter((offlineNote: TNote) => {
+      if (isExpiredOfflineTombstone(offlineNote)) {
+        return false
       }
+      if (offlineNote.list) {
+        offlineNote.list = offlineNote.list.filter((offlineListItem) => !isExpiredOfflineTombstone(offlineListItem))
+      }
+      return true
     })
-    offlineNotesIndicesToRemove.forEach((offlineNoteIndex) =>
-      offlineData.notes.splice(offlineNoteIndex, 1),
-    )
-    offlineListItemsIndicesToRemove.forEach((offlineListItemIndex) =>
-      offlineData.notes.splice(offlineListItemIndex, 1),
-    )
 
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
   }
@@ -323,7 +359,10 @@ export default class SyncService extends BaseService {
       await InitService.initApplication(undefined, isUpdating)
     } finally {
       globalStore.isSocketErrorOnce = false
-      // globalStore.isUpdating = false
+      // Reset the flag here so the "Updating…" toast clears even on code paths
+      // where InitService.initApplication skipped synchronizeOfflineData (the
+      // only other place that resets it) — e.g. when no offline blob exists.
+      globalStore.isUpdating = false
     }
   }
 

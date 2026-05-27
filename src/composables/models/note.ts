@@ -82,13 +82,13 @@ export default function noteModel(noteData: TNote) {
 
   async function handleListItem(listItem: TListItemModel) {
     listItem.noteId = id.value
-    const data = await BaseService.api.addListItem(listItem)
-    listItem.id = data.id
+    const createdData = await BaseService.api.addListItem(listItem)
+    listItem.id = createdData.id
     listItem.isCreating = false
     listItem.handleDataTransformation()
     if (listItem.isUpdateNeeded) {
-      const data = await BaseService.api.updateListItem(listItem)
-      listItem.updated = new Date(data.updated || '')
+      const updatedData = await BaseService.api.updateListItem(listItem)
+      listItem.updated = new Date(updatedData.updated || '')
       listItem.isUpdateNeeded = false
     }
   }
@@ -111,20 +111,23 @@ export default function noteModel(noteData: TNote) {
         isUpdateNeeded.value = true
       } else {
         isCreating.value = true
-        const noteData = await BaseService.api.addNote(
-          list.value,
-          title.value.trim(),
-          text.value.trim(),
-          typeId.value,
-          order.value,
-          isCompletedListExpanded.value,
-          isCountable.value,
-          isShowCheckedCheckboxes.value,
-          isPrioritySort.value,
-        )
-        id.value = noteData.id
-        userId.value = noteData.user?.id
-        isCreating.value = false
+        try {
+          const noteData = await BaseService.api.addNote(
+            [],
+            title.value.trim(),
+            text.value.trim(),
+            typeId.value,
+            order.value,
+            isCompletedListExpanded.value,
+            isCountable.value,
+            isShowCheckedCheckboxes.value,
+            isPrioritySort.value,
+          )
+          id.value = noteData.id
+          userId.value = noteData.user?.id
+        } finally {
+          isCreating.value = false
+        }
         if (isUpdateNeeded.value && id.value) {
           await BaseService.api.updateNote(
             id.value,
@@ -138,12 +141,19 @@ export default function noteModel(noteData: TNote) {
           )
           isUpdateNeeded.value = false
         }
-        unSavedListItems.value.forEach((listItem) => handleListItem(listItem))
-        BaseService.router.push(`/note/${noteData.id}`)
+        while (unSavedListItems.value.length) {
+          const pendingListItem = unSavedListItems.value.shift()
+          if (pendingListItem) {
+            // eslint-disable-next-line no-await-in-loop
+            await handleListItem(pendingListItem as unknown as TListItemModel)
+          }
+        }
+        BaseService.router.push(`/note/${id.value}`)
       }
-      isSaving.value = false
     } catch (error) {
       BaseService.showError(error as Error)
+    } finally {
+      isSaving.value = false
     }
   }
 
@@ -163,18 +173,19 @@ export default function noteModel(noteData: TNote) {
         listItem.isUpdateNeeded = true
       } else {
         listItem.isCreating = true
-        if (!id.value) {
+        if (id.value) {
+          await handleListItem(listItem)
+        } else {
+          unSavedListItems.value.push(listItem)
           if (!isCreating.value) {
             await save()
           }
-          unSavedListItems.value.push(listItem)
-        } else {
-          await handleListItem(listItem)
         }
       }
-      isSaving.value = false
     } catch (error) {
       BaseService.showError(error as Error)
+    } finally {
+      isSaving.value = false
     }
   }
 
