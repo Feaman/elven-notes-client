@@ -10,6 +10,10 @@ const notes: Ref<TNoteModel[]> = ref([])
 const removingNotes = ref<TNoteModel[]>([])
 export const searchQuery = ref('')
 
+function isInFlightEntity(entity: { id?: number | string, isCreating?: boolean }) {
+  return entity.id === undefined || entity.isCreating === true
+}
+
 function generateNotes(notesData: TNote[]) {
   // Update existing notes
   notesData.forEach((noteData: TNote) => {
@@ -39,15 +43,20 @@ function generateNotes(notesData: TNote[]) {
         }
       })
 
-      // Remove removed list items
-      existingNote.list = existingNote.list.filter((note) => (noteData.list || []).find((newNoteData) => newNoteData.id === note.id))
+      // Remove removed list items (keep in-flight items not yet confirmed by server,
+      // otherwise typing into a brand-new item races with sync and throws "listItem not found")
+      existingNote.list = existingNote.list.filter((listItem) =>
+        isInFlightEntity(listItem)
+        || (noteData.list || []).find((newNoteData) => newNoteData.id === listItem.id))
     } else {
       notes.value.push(newNote as unknown as TNoteModel)
     }
   })
 
-  // Remove removed notes
-  notes.value = notes.value.filter((note) => notesData.find((_note) => _note.id === note.id))
+  // Remove removed notes (keep in-flight notes that haven't been confirmed by server yet)
+  notes.value = notes.value.filter((note) =>
+    isInFlightEntity(note)
+    || notesData.find((_note) => _note.id === note.id))
 }
 
 async function setNotesOrder(order: number[]) {
