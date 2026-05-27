@@ -70,15 +70,12 @@ async function handleClick() {
     return
   }
 
+  showDialog.value = true
   isChecking.value = true
   try {
     await HealthService.check(HealthService.LONG_TIMEOUT_MS)
   } finally {
     isChecking.value = false
-  }
-
-  if (!store.isOnline) {
-    showDialog.value = true
   }
 }
 

@@ -12,7 +12,7 @@
         <ConnectionErrorDialog
           :model-value="isNoOfflineDataError"
           @hide="handleHideOfflineError"
-          message="Looks like there is no Internet here. To use this app in offline mode you should be authorized and start the application online at least once."
+          message="Looks like there is no Internet here. Wait until server will be online and try again."
           :on-check="handleCheckConnection"
         />
       </div>
