@@ -35,6 +35,7 @@
               counter
               clearable
               outlined
+              :disable="isLoading"
             )
             q-input.q-mt-lg(
               v-model="password"
@@ -44,6 +45,7 @@
               counter
               clearable
               outlined
+              :disable="isLoading"
             )
         transition(
           appear
@@ -61,6 +63,7 @@
               clearable
               dense
               outlined
+              :disable="isLoading"
             )
             q-input.q-mt-lg(
               v-model="password"
@@ -71,6 +74,7 @@
               clearable
               dense
               outlined
+              :disable="isLoading"
             )
             q-input.q-mt-lg(
               v-model="firstName"
@@ -80,6 +84,7 @@
               clearable
               dense
               outlined
+              :disable="isLoading"
             )
             q-input.q-mt-lg(
               v-model="secondName"
@@ -89,6 +94,7 @@
               clearable
               dense
               outlined
+              :disable="isLoading"
             )
       transition(
         appear
@@ -101,13 +107,15 @@
 
       q-btn.text-black.mt-4(
         @click="sign"
-        :disable="!isValid"
+        :disable="!isValid || isLoading"
+        :loading="isLoading"
         :label="`Sign ${isSignIn ? 'In' : 'Up'}`"
         color="primary"
       )
       .mt-4 OR
       q-btn.mt-2(
         @click="togglePage"
+        :disable="isLoading"
         :label="`Sign ${isSignIn ? 'Up' : 'In'}`"
         flat
       )

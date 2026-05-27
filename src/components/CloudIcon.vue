@@ -9,32 +9,12 @@
   )
     ToolTip {{ tooltipText }}
 
-  q-dialog(
-    @hide="showDialog = false"
+  ConnectionErrorDialog(
     :model-value="showDialog"
-    transition-show="flip-up"
-    transition-hide="flip-down"
+    @hide="showDialog = false"
+    message="Seems like there is no Internet here. The application is working offline."
+    :on-check="handleCheckConnection"
   )
-    q-card
-      q-toolbar.q-flex.bg-primary.shadow-3
-        q-toolbar-title.ml-2
-          .q-flex.items-center
-            q-icon(
-              :name="mdiAlertDecagram"
-              size="sm"
-              color="red"
-            )
-            .font-size-18.ml-2 Connection error
-        q-btn(
-          @click="showDialog = false"
-          :icon="mdiClose"
-          color="black"
-          flat
-          round
-          dense
-        )
-      .pa-6
-        .font-size-18 Seems like there is no Internet here. The application is working offline.
 </template>
 
 <script setup lang="ts">
@@ -44,8 +24,8 @@ import {
   mdiCloudUploadOutline,
   mdiCloudCheckOutline,
   mdiCloudSyncOutline,
-  mdiClose,
 } from '@quasar/extras/mdi-v6'
+import ConnectionErrorDialog from '~/components/ConnectionErrorDialog.vue'
 import { type TNoteModel } from '~/composables/models/note'
 import HealthService from '~/services/health'
 import { useGlobalStore } from '~/stores/global'
@@ -99,6 +79,19 @@ async function handleClick() {
 
   if (!store.isOnline) {
     showDialog.value = true
+  }
+}
+
+async function handleCheckConnection() {
+  isChecking.value = true
+  try {
+    await HealthService.check(HealthService.LONG_TIMEOUT_MS)
+  } finally {
+    isChecking.value = false
+  }
+
+  if (store.isOnline) {
+    showDialog.value = false
   }
 }
 </script>
