@@ -3,6 +3,10 @@
     class="main-layout"
     view="hHh Lpr fFf"
   >
+    <CloudIcon
+      v-if="!globalStore.isOnline"
+      class="offline-indicator"
+    ></CloudIcon>
     <q-page-container v-if="isNoOfflineDataError">
       <div class="offline-data-error q-flex flex-center pa-8">
         <q-card>
@@ -227,6 +231,13 @@ watch(
   top: calc(100% - 60px);
   right: 20px;
   z-index: 30;
+}
+
+.offline-indicator {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 2000;
 }
 
 @media (max-width: 700px) {

@@ -167,4 +167,8 @@ export default class OnlineApiService implements IApi {
     const userData = {}
     await this.api.put('users', userData)
   }
+
+  async checkStatus(config?: object): Promise<void> {
+    await this.api.head('status', config)
+  }
 }

@@ -10,6 +10,10 @@ export default class BaseService {
 
   static API_DOMAIN = 'api-notes.pavlo.ru'
 
+  static DEV_API_DOMAIN = 'localhost:3015'
+
+  static DEV_API_URL = `http://${BaseService.DEV_API_DOMAIN}`
+
   static OFFLINE_STORE_NAME = 'offline-data'
 
   static api: ApiService

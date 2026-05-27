@@ -3,6 +3,7 @@ import { boot } from 'quasar/wrappers'
 import draggable from 'zhyswan-vuedraggable'
 import ApiService from '~/services/api/api'
 import BaseService from '~/services/base'
+import HealthService from '~/services/health'
 import InitService from '~/services/init'
 import SocketIOService from '~/services/socket-io'
 import SyncService from '~/services/sync'
@@ -59,6 +60,9 @@ export default boot(async ({ app }) => {
       }
       isDocumentFocused = true
     } else {
+      if (isDocumentFocused !== false) {
+        HealthService.stop()
+      }
       isDocumentFocused = false
       SyncService.removeRemovedEntities()
     }
@@ -69,7 +73,8 @@ export default boot(async ({ app }) => {
       const channel = new BroadcastChannel('elven-keep-service-worker')
       channel.postMessage({ requestUpdate: true })
       if (!store.isWatchMode) {
-        await SyncService.handleApplicationUpdate(true)
+        HealthService.start()
+        await HealthService.check(HealthService.LONG_TIMEOUT_MS, true)
       }
     } catch (error) {
       BaseService.showError(error as Error)
@@ -77,11 +82,10 @@ export default boot(async ({ app }) => {
   })
 
   window.addEventListener('offline', () => {
-    store.isOnline = false
+    HealthService.check(HealthService.LONG_TIMEOUT_MS)
   })
   window.addEventListener('online', () => {
-    store.isOnline = true
-    SyncService.synchronizeOfflineData()
+    HealthService.check(HealthService.LONG_TIMEOUT_MS)
   })
 
   const channel = new BroadcastChannel('elven-keep-service-worker')
@@ -92,5 +96,7 @@ export default boot(async ({ app }) => {
   })
 
   SocketIOService.init()
+  await HealthService.check(HealthService.SHORT_TIMEOUT_MS)
   await InitService.initApplication()
+  HealthService.start()
 })

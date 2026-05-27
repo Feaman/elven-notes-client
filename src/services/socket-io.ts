@@ -32,7 +32,7 @@ export default class SocketIOService extends BaseService {
   static init() {
     const token = StorageService.get(UsersService.AUTH_TOKEN_NAME)
     const socket = io(
-      process.env.DEV ? 'localhost:3015' : BaseService.API_DOMAIN,
+      process.env.DEV ? BaseService.DEV_API_DOMAIN : BaseService.API_DOMAIN,
       { extraHeaders: { Authorization: `Bearer ${token}` } },
     )
 

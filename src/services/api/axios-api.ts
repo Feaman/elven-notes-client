@@ -31,4 +31,8 @@ export default class AxiosApi implements IAxiosApi {
   delete(url: string, data?: object) {
     return this.api.delete(url, data)
   }
+
+  head(url: string, config?: object) {
+    return this.api.head(url, config)
+  }
 }

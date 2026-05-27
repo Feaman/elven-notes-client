@@ -201,4 +201,8 @@ export default class ApiService implements IApi {
 
     return this.offlineApiService.updateUser()
   }
+
+  async checkStatus(config?: object): Promise<void> {
+    return this.onlineApiService.checkStatus(config)
+  }
 }
