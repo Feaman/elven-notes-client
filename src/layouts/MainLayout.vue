@@ -9,23 +9,12 @@
     ></CloudIcon>
     <q-page-container v-if="isNoOfflineDataError">
       <div class="offline-data-error q-flex flex-center pa-8">
-        <q-card>
-          <q-toolbar class="q-flex bg-primary shadow-3">
-            <q-toolbar-title class="ml-2">
-              <div class="q-flex items-center">
-                <q-icon
-                  :name="mdiAlertDecagram"
-                  size="sm"
-                  color="red"
-                ></q-icon>
-                <div class="font-size-18 ml-2">Connection error</div>
-              </div>
-            </q-toolbar-title>
-          </q-toolbar>
-          <div class="pa-6">
-            <div class="font-size-18">Looks like there is no Internet here. To use this app in offline mode you should be authorized and start the application online at least once.</div>
-          </div>
-        </q-card>
+        <ConnectionErrorDialog
+          :model-value="isNoOfflineDataError"
+          @hide="handleHideOfflineError"
+          message="Looks like there is no Internet here. To use this app in offline mode you should be authorized and start the application online at least once."
+          :on-check="handleCheckConnection"
+        />
       </div>
     </q-page-container>
     <q-page-container v-else-if="isErrorShown">
@@ -81,9 +70,9 @@
 </template>
 
 <script setup lang="ts">
-import { mdiAlertDecagram } from '@quasar/extras/mdi-v6'
 import { useQuasar } from 'quasar'
 import { computed, onMounted, ref, watch } from 'vue'
+import ConnectionErrorDialog from '~/components/ConnectionErrorDialog.vue'
 import NotListSkeletons from '~/components/note/NotListSkeletons.vue'
 import ListItemsService from '~/composables/services/list-items'
 import NotesService from '~/composables/services/notes'
@@ -94,7 +83,7 @@ import { type TGlobalError } from '~/types'
 
 const $q = useQuasar()
 
-let isNoOfflineDataError = false
+const isNoOfflineDataError = ref(false)
 const isErrorShown = ref(false)
 const globalStore = useGlobalStore()
 let removeTimeout: ReturnType<typeof setTimeout> | null = null
@@ -120,7 +109,20 @@ if (globalStore.initError) {
 }
 
 if (globalStore.isNoOfflineDataError) {
-  isNoOfflineDataError = true
+  isNoOfflineDataError.value = true
+}
+
+function handleHideOfflineError() {
+  isNoOfflineDataError.value = false
+}
+
+async function handleCheckConnection() {
+  try {
+    await SyncService.synchronizeOfflineData()
+    isNoOfflineDataError.value = false
+  } catch (error) {
+    BaseService.showError(error as Error)
+  }
 }
 
 function restoreItems() {

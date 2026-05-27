@@ -20,10 +20,21 @@ export default class InitService extends BaseService {
       }
 
       if (!data) {
-        data = await BaseService.api.getConfig()
+        try {
+          data = await BaseService.api.getConfig()
+        } catch (error) {
+          const parsedError = BaseService.parseAxiosError(error as AxiosError)
+          if (parsedError.statusCode === 401) {
+            throw error
+          }
+          if (globalStore.isOnline) {
+            globalStore.isOnline = false
+          }
+          data = await BaseService.api.getConfig()
+        }
       }
 
-      if (!globalStore.isOnline && !data) {
+      if (!data) {
         globalStore.isNoOfflineDataError = true
         return
       }
