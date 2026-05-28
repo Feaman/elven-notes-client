@@ -40,12 +40,14 @@ export default class SocketIOService extends BaseService {
       this.socketId = socket.id || ''
       const globalStore = useGlobalStore()
       globalStore.isSocketError = false
+      globalStore.isOnline = true
     })
 
     socket.on('connect_error', (error) => {
       const globalStore = useGlobalStore()
       globalStore.isSocketError = true
       globalStore.isSocketErrorOnce = true
+      globalStore.isOnline = false
       // eslint-disable-next-line
       console.error(error)
     })

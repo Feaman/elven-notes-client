@@ -8,8 +8,6 @@ export default class HealthService extends BaseService {
 
   static LONG_TIMEOUT_MS = 5000
 
-  private static intervalId: ReturnType<typeof setInterval> | null = null
-
   private static currentAbortController: AbortController | null = null
 
   static async check(
@@ -58,21 +56,5 @@ export default class HealthService extends BaseService {
     const globalStore = useGlobalStore()
     const isOnSignRoute = HealthService.router.currentRoute.value.name === ROUTE_SIGN
     return globalStore.user !== null && !isOnSignRoute
-  }
-
-  static start(): void {
-    if (HealthService.intervalId !== null) {
-      return
-    }
-    HealthService.intervalId = setInterval(() => {
-      HealthService.check(HealthService.LONG_TIMEOUT_MS)
-    }, HealthService.LONG_TIMEOUT_MS)
-  }
-
-  static stop(): void {
-    if (HealthService.intervalId !== null) {
-      clearInterval(HealthService.intervalId)
-      HealthService.intervalId = null
-    }
   }
 }

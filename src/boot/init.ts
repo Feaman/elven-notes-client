@@ -61,7 +61,6 @@ export default boot(async ({ app }) => {
       isDocumentFocused = true
     } else {
       if (isDocumentFocused !== false) {
-        HealthService.stop()
         SyncService.removeRemovedEntities()
       }
       isDocumentFocused = false
@@ -73,7 +72,6 @@ export default boot(async ({ app }) => {
       const channel = new BroadcastChannel('elven-keep-service-worker')
       channel.postMessage({ requestUpdate: true })
       if (!store.isWatchMode) {
-        HealthService.start()
         await HealthService.check(HealthService.LONG_TIMEOUT_MS, true)
       }
     } catch (error) {
@@ -98,5 +96,4 @@ export default boot(async ({ app }) => {
   SocketIOService.init()
   await HealthService.check(HealthService.SHORT_TIMEOUT_MS)
   await InitService.initApplication()
-  HealthService.start()
 })
