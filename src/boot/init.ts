@@ -14,6 +14,10 @@ export default boot(async ({ app }) => {
   const store = useGlobalStore()
   BaseService.api = new ApiService()
   BaseService.showError = (error: Error | TGlobalError) => {
+    if (BaseService.isNetworkError(error)) {
+      store.isOnline = false
+      return
+    }
     let resultError: TGlobalError | Error = error
     if ((error as AxiosError).response) {
       resultError = BaseService.parseAxiosError(error as AxiosError)

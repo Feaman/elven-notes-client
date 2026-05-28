@@ -2,6 +2,7 @@ import { TCoAuthor } from '~/composables/models/co-author'
 import { TListItemModel, type TListItem } from '~/composables/models/list-item'
 import { TNote, TNoteModel } from '~/composables/models/note'
 import { useGlobalStore } from '~/stores/global'
+import BaseService from '~/services/base'
 import IApi, { ConfigObject } from './interface'
 import OfflineApiService from './offline-api'
 import OnlineApiService from './online-api'
@@ -22,6 +23,16 @@ export default class ApiService implements IApi {
   constructor() {
     this.onlineApiService = new OnlineApiService()
     this.offlineApiService = new OfflineApiService()
+  }
+
+  private async tryOnlineCall<T>(onlineCall: () => Promise<T>): Promise<T | undefined> {
+    try {
+      return await onlineCall()
+    } catch (error) {
+      if (!BaseService.isNetworkError(error)) throw error
+      useGlobalStore().isOnline = false
+      return undefined
+    }
   }
 
   async getConfig(): Promise<ConfigObject> {
@@ -45,7 +56,7 @@ export default class ApiService implements IApi {
   ): Promise<TNote> {
     let noteId
     if (useGlobalStore().isOnline) {
-      const serverNote = await this.onlineApiService.addNote(
+      const serverNote = await this.tryOnlineCall(() => this.onlineApiService.addNote(
         list,
         title,
         text,
@@ -55,8 +66,8 @@ export default class ApiService implements IApi {
         isCountable,
         isShowCheckedCheckboxes,
         isPrioritySort,
-      )
-      noteId = serverNote.id
+      ))
+      noteId = serverNote?.id
     }
     return this.offlineApiService.addNote(
       list,
@@ -83,7 +94,7 @@ export default class ApiService implements IApi {
     isPrioritySort: boolean,
   ): Promise<TNote> {
     if (useGlobalStore().isOnline && !isOfflineId(id)) {
-      await this.onlineApiService.updateNote(
+      await this.tryOnlineCall(() => this.onlineApiService.updateNote(
         id,
         title,
         text,
@@ -92,7 +103,7 @@ export default class ApiService implements IApi {
         isCountable,
         isShowCheckedCheckboxes,
         isPrioritySort,
-      )
+      ))
     }
     return this.offlineApiService.updateNote(
       id,
@@ -111,44 +122,48 @@ export default class ApiService implements IApi {
       // Server's response is the authoritative list of completed items —
       // another device may have toggled checks that we don't see locally.
       // Mirror that exact state into the offline blob.
-      const serverNoteData = await this.onlineApiService.completeNote(id)
-      return this.offlineApiService.applyCompletedNote(serverNoteData)
+      const serverNoteData = await this.tryOnlineCall(() => this.onlineApiService.completeNote(id))
+      if (serverNoteData) {
+        return this.offlineApiService.applyCompletedNote(serverNoteData)
+      }
     }
     return this.offlineApiService.completeNote(id)
   }
 
   async removeNote(note: TNoteModel | TNote) {
     if (useGlobalStore().isOnline && !isOfflineId(note.id)) {
-      await this.onlineApiService.removeNote(note)
+      await this.tryOnlineCall(() => this.onlineApiService.removeNote(note))
     }
     return this.offlineApiService.removeNote(note)
   }
 
   async restoreNote(noteId: number | string) {
     if (useGlobalStore().isOnline && !isOfflineId(noteId)) {
-      await this.onlineApiService.restoreNote(noteId)
+      await this.tryOnlineCall(() => this.onlineApiService.restoreNote(noteId))
     }
     return this.offlineApiService.restoreNote(noteId)
   }
 
   async addListItem(listItem: TListItemModel): Promise<TListItem> {
     if (useGlobalStore().isOnline && !isOfflineId(listItem.noteId)) {
-      const serverListItem = await this.onlineApiService.addListItem(listItem)
-      listItem.id = serverListItem.id
+      const serverListItem = await this.tryOnlineCall(() => this.onlineApiService.addListItem(listItem))
+      if (serverListItem) {
+        listItem.id = serverListItem.id
+      }
     }
     return this.offlineApiService.addListItem(listItem)
   }
 
   async updateListItem(listItem: TListItemModel): Promise<TListItem> {
     if (useGlobalStore().isOnline && !isOfflineId(listItem.id) && !isOfflineId(listItem.noteId)) {
-      await this.onlineApiService.updateListItem(listItem)
+      await this.tryOnlineCall(() => this.onlineApiService.updateListItem(listItem))
     }
     return this.offlineApiService.updateListItem(listItem)
   }
 
   async removeListItem(listItem: TListItemModel | TListItem, completely = false) {
     if (useGlobalStore().isOnline && !isOfflineId(listItem.id) && !isOfflineId(listItem.noteId)) {
-      await this.onlineApiService.removeListItem(listItem, completely)
+      await this.tryOnlineCall(() => this.onlineApiService.removeListItem(listItem, completely))
     }
 
     return this.offlineApiService.removeListItem(listItem, completely)
@@ -156,7 +171,7 @@ export default class ApiService implements IApi {
 
   async restoreListItem(noteId: number | string, listItemId: number | string) {
     if (useGlobalStore().isOnline && !isOfflineId(noteId) && !isOfflineId(listItemId)) {
-      await this.onlineApiService.restoreListItem(noteId, listItemId)
+      await this.tryOnlineCall(() => this.onlineApiService.restoreListItem(noteId, listItemId))
     }
 
     return this.offlineApiService.restoreListItem(noteId, listItemId)
@@ -192,21 +207,21 @@ export default class ApiService implements IApi {
 
   async setListItemsOrder(note: TNoteModel | TNote, order: number[]) {
     if (useGlobalStore().isOnline && !isOfflineId(note.id)) {
-      await this.onlineApiService.setListItemsOrder(note, order)
+      await this.tryOnlineCall(() => this.onlineApiService.setListItemsOrder(note, order))
     }
     return this.offlineApiService.setListItemsOrder(note, order)
   }
 
   async setNotesOrder(order: number[]) {
     if (useGlobalStore().isOnline) {
-      await this.onlineApiService.setNotesOrder(order)
+      await this.tryOnlineCall(() => this.onlineApiService.setNotesOrder(order))
     }
     return this.offlineApiService.setNotesOrder(order)
   }
 
   async updateUser() {
     if (useGlobalStore().isOnline) {
-      await this.onlineApiService.updateUser()
+      await this.tryOnlineCall(() => this.onlineApiService.updateUser())
     }
 
     return this.offlineApiService.updateUser()

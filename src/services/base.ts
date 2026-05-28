@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios'
+import { AxiosError, isAxiosError } from 'axios'
 import mitt from 'mitt'
 import { Router } from 'vue-router'
 import { useGlobalStore } from '~/stores/global'
@@ -23,6 +23,10 @@ export default class BaseService {
   static eventBus = mitt<TEvents>()
 
   static router: Router
+
+  static isNetworkError(error: unknown): boolean {
+    return isAxiosError(error) && !error.response
+  }
 
   static parseAxiosError(error: AxiosError): TGlobalError {
     return {
