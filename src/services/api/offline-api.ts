@@ -338,7 +338,7 @@ export default class OfflineApiService implements IApi {
       throw new Error(`[offlineApi.setListItemsOrder]: Note with id "${note.id}" not found in offline data`)
     }
 
-    order.forEach(async (listItemId: number, index: number) => {
+    order.forEach((listItemId: number, index: number) => {
       const offlineListItem = offlineNote.list?.find((listItem: TListItem) => listItem.id === listItemId)
       if (!offlineListItem) {
         throw new Error(
@@ -356,7 +356,7 @@ export default class OfflineApiService implements IApi {
     this.checkAuthToken()
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
 
-    order.forEach(async (noteId: number, index: number) => {
+    order.forEach((noteId: number, index: number) => {
       const offlineNote = offlineData.notes.find((note) => note.id === noteId)
       if (!offlineNote) {
         throw new Error(

@@ -25,6 +25,10 @@ export default class ApiService implements IApi {
     this.offlineApiService = new OfflineApiService()
   }
 
+  // Attempt an online API call with automatic fallback to offline mode on network failure.
+  // Returns undefined if network error occurs; all other errors are re-thrown.
+  // Note: If network fails during the call, the operation may be partially applied.
+  // The offline layer always executes after this to ensure eventual consistency.
   private async tryOnlineCall<T>(onlineCall: () => Promise<T>): Promise<T | undefined> {
     try {
       return await onlineCall()

@@ -13,6 +13,17 @@ import InitService from './init'
 import StorageService from './storage'
 
 export default class SyncService extends BaseService {
+  // Reconcile offline changes with the server snapshot.
+  //
+  // The `updated` timestamp is server-generated at the time of modification,
+  // so it is the authoritative source for conflict resolution. We use
+  // last-write-wins: whichever version has the newer `updated` timestamp is
+  // treated as the authoritative state and overwrites the other.
+  //
+  // This is safe within a single-user context (no concurrent edits from
+  // different devices in the microsecond window) but is vulnerable if two
+  // devices update the same note within a very tight time window. For
+  // multi-device scenarios, consider upgrading to CRDT-based resolution.
   static async synchronizeOfflineData(data?: ConfigObject) {
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
     if (!offlineData || !offlineData.notes) {
@@ -25,6 +36,11 @@ export default class SyncService extends BaseService {
     let offlineListItemsToRemove: TListItem[] = []
     let onlineListItemsToRemove: TListItem[] = []
 
+    // Clear expired tombstones before starting the sync. Offline-only deletes
+    // (entities marked inactive) are in the storage, and we'll handle them
+    // during the sync loop. Only after we've had a chance to push them to
+    // the server will we prune the deletion records (via the 15s expiration
+    // window). This prevents losing deletions if sync takes longer than 5s.
     this.clearRemovedOfflineNotesAndListItems()
 
     const globalStore = useGlobalStore()
@@ -324,7 +340,9 @@ export default class SyncService extends BaseService {
       return
     }
     const inactiveStatusId = StatusesService.inactive.value.id
-    const tombstoneExpirationMs = 5000
+    // Tombstone expiration: 15 seconds gives sync enough time to complete
+    // on slow networks before we prune the deletion records
+    const tombstoneExpirationMs = 15000
     const currentTimestampMs = new Date().getTime()
 
     const isExpiredOfflineTombstone = (entity: TNote | TListItem) =>

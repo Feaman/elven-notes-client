@@ -58,24 +58,28 @@ export default class SocketIOService extends BaseService {
     })
 
     socket.on(this.EVENT_NOTE_ADDED, async (noteData: TNote) => {
-      // Add note
-      const note = noteModel(noteData)
-      NotesService.notes.value.push(note as unknown as TNoteModel)
+      try {
+        // Add note
+        const note = noteModel(noteData)
+        NotesService.notes.value.push(note as unknown as TNoteModel)
 
-      // Add offline note
-      const offlineApi = new OfflineApiService()
-      await offlineApi.addNote(
-        [],
-        noteData.title || '',
-        noteData.text || '',
-        Number(noteData.typeId),
-        noteData.order,
-        !!noteData.isCompletedListExpanded,
-        !!noteData.isCountable,
-        !!noteData.isShowCheckedCheckboxes,
-        !!noteData.isPrioritySort,
-        noteData.id,
-      )
+        // Add offline note
+        const offlineApi = new OfflineApiService()
+        await offlineApi.addNote(
+          [],
+          noteData.title || '',
+          noteData.text || '',
+          Number(noteData.typeId),
+          noteData.order,
+          !!noteData.isCompletedListExpanded,
+          !!noteData.isCountable,
+          !!noteData.isShowCheckedCheckboxes,
+          !!noteData.isPrioritySort,
+          noteData.id,
+        )
+      } catch (error) {
+        BaseService.eventBus.emit('showGlobalError', { statusCode: 500, message: (error as Error).message })
+      }
     })
 
     socket.on(this.EVENT_NOTE_CHANGED, async (noteData: TNote) => {
@@ -167,7 +171,7 @@ export default class SocketIOService extends BaseService {
           note.addListItem(listItemModel(listItemData) as unknown as TListItemModel)
         }
 
-        // Remove offline note
+        // Add offline list item
         const offlineApi = new OfflineApiService()
         await offlineApi.addListItem(listItemData)
       } catch (error) {
@@ -208,7 +212,7 @@ export default class SocketIOService extends BaseService {
         const offlineApi = new OfflineApiService()
         await offlineApi.removeListItem(listItemData, true)
 
-        // Remove offline list item
+        // Remove list item from UI
         const note = NotesService.notes.value.find((note) => note.id === listItemData.noteId)
         if (note) {
           const listItem = note.list.find((listItem) => listItem.id === listItemData.id)
@@ -221,15 +225,35 @@ export default class SocketIOService extends BaseService {
       }
     })
 
-    socket.on(this.EVENT_NOTE_ORDER_SET, (noteData: TNote) => {
-      const note = NotesService.notes.value.find((_note) => _note.id === noteData.id) as TNoteModel
-      if (note && note.isList) {
-        noteData.list?.forEach((listItemData: TListItem) => {
-          const listItem = note.list.find((listItem) => listItem.id === listItemData.id) as TListItemModel
-          if (listItem) {
-            listItem.order = Number(listItemData.order)
+    socket.on(this.EVENT_NOTE_ORDER_SET, async (noteData: TNote) => {
+      try {
+        const note = NotesService.notes.value.find((_note) => _note.id === noteData.id) as TNoteModel
+        if (note && note.isList) {
+          noteData.list?.forEach((listItemData: TListItem) => {
+            const listItem = note.list.find((listItem) => listItem.id === listItemData.id) as TListItemModel
+            if (listItem) {
+              listItem.order = Number(listItemData.order)
+            }
+          })
+        }
+
+        // Persist order changes to offline storage
+        const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
+        if (offlineData) {
+          const offlineNote = offlineData.notes.find((n: TNote) => n.id === noteData.id)
+          if (offlineNote?.list) {
+            noteData.list?.forEach((serverItem: TListItem) => {
+              const offlineItem = offlineNote.list.find((i: TListItem) => i.id === serverItem.id)
+              if (offlineItem) {
+                offlineItem.order = serverItem.order
+                offlineItem.updated = serverItem.updated || new Date().toISOString()
+              }
+            })
+            StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
           }
-        })
+        }
+      } catch (error) {
+        BaseService.eventBus.emit('showGlobalError', { statusCode: 500, message: (error as Error).message })
       }
     })
   }

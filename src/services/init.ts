@@ -47,6 +47,9 @@ export default class InitService extends BaseService {
         const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
         if (!offlineData) {
           StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: data })
+        } else if (!this.isValidOfflineData(offlineData)) {
+          // Offline data is corrupted; discard it and start fresh from server
+          StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: data })
         } else {
           // Wait for the merge so offline-only changes (e.g. a list item added
           // while offline) are pushed to the server and promoted from
@@ -106,5 +109,30 @@ export default class InitService extends BaseService {
     if (globalStore.isOnline) {
       await this.initApplication()
     }
+  }
+
+  // Validate offline blob structure to detect corruption
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static isValidOfflineData(data: any): boolean {
+    if (!data || typeof data !== 'object') {
+      return false
+    }
+    if (!Array.isArray(data.notes)) {
+      return false
+    }
+    // Check that notes array contains valid note objects
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const notesValid = data.notes.every((note: any) => {
+      if (!note.id) {
+        return false
+      }
+      if (!Array.isArray(note.list)) {
+        return false
+      }
+      // Check list items have required fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return note.list.every((item: any) => item.id && item.noteId)
+    })
+    return notesValid
   }
 }
