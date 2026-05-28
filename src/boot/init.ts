@@ -79,6 +79,16 @@ export default boot(async ({ app }) => {
     }
   })
 
+  window.addEventListener('online', async () => {
+    if (!store.isWatchMode) {
+      try {
+        await SyncService.handleApplicationUpdate(true)
+      } catch (error) {
+        BaseService.showError(error as Error)
+      }
+    }
+  })
+
   const channel = new BroadcastChannel('elven-keep-service-worker')
   channel.addEventListener('message', (event) => {
     if (event.data.updateReady === true) {
