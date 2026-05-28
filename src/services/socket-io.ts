@@ -52,6 +52,11 @@ export default class SocketIOService extends BaseService {
       console.error(error)
     })
 
+    socket.on('disconnect', () => {
+      const globalStore = useGlobalStore()
+      globalStore.isOnline = false
+    })
+
     socket.on(this.EVENT_NOTE_ADDED, async (noteData: TNote) => {
       // Add note
       const note = noteModel(noteData)
