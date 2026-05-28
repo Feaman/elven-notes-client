@@ -79,13 +79,6 @@ export default boot(async ({ app }) => {
     }
   })
 
-  window.addEventListener('offline', () => {
-    HealthService.check(HealthService.LONG_TIMEOUT_MS)
-  })
-  window.addEventListener('online', () => {
-    HealthService.check(HealthService.LONG_TIMEOUT_MS)
-  })
-
   const channel = new BroadcastChannel('elven-keep-service-worker')
   channel.addEventListener('message', (event) => {
     if (event.data.updateReady === true) {
