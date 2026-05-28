@@ -83,6 +83,8 @@ export default function noteModel(noteData: TNote) {
     listItem.noteId = id.value
     const createdData = await BaseService.api.addListItem(listItem)
     listItem.id = createdData.id
+    listItem.updated = new Date(createdData.updated || '')
+    listItem.created = new Date(createdData.created || '')
     listItem.isCreating = false
     listItem.handleDataTransformation()
     if (listItem.isUpdateNeeded) {
@@ -124,6 +126,8 @@ export default function noteModel(noteData: TNote) {
           )
           id.value = noteData.id
           userId.value = noteData.user?.id
+          created.value = new Date(noteData.created || '')
+          updated.value = new Date(noteData.updated || '')
         } finally {
           isCreating.value = false
         }

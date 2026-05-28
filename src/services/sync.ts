@@ -89,6 +89,7 @@ export default class SyncService extends BaseService {
             )
             offlineNote.id = newNote.id
             offlineNote.updated = newNote.updated
+            offlineNote.created = newNote.created
 
             // Create online list items
             if (offlineNoteList) {
@@ -103,6 +104,7 @@ export default class SyncService extends BaseService {
                 const onlineListItem = await onlineApi.addListItem(offlineListItem)
                 offlineListItem.id = onlineListItem.id
                 offlineListItem.updated = onlineListItem.updated
+                offlineListItem.created = onlineListItem.created
                 offlineNote.list.push(offlineListItem)
               }
             }
@@ -207,6 +209,7 @@ export default class SyncService extends BaseService {
                 const newListItem = await onlineApi.addListItem(offlineListItem)
                 offlineListItem.id = newListItem.id
                 offlineListItem.updated = newListItem.updated
+                offlineListItem.created = newListItem.created
                 const inMemoryNote = NotesService.notes.value.find(
                   (memoryNote) => memoryNote.id === offlineNote.id,
                 )
@@ -216,6 +219,7 @@ export default class SyncService extends BaseService {
                 if (inMemoryListItem) {
                   inMemoryListItem.id = newListItem.id
                   inMemoryListItem.updated = new Date(newListItem.updated || '')
+                  inMemoryListItem.created = new Date(newListItem.created || '')
                 }
               } else {
                 // Orphan: gone from the server, never created locally. Defer
