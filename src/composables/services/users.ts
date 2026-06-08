@@ -24,6 +24,12 @@ async function register(email: string, password: string, firstName: string, seco
 
 async function signOut() {
   InitService.clearApplication()
+  // Сбрасываем флаг загрузки: иначе MainLayout остаётся на экране загрузки
+  // (скелетоны только для маршрутов заметок), и страница /sign не отрисовывается.
+  const globalStore = useGlobalStore()
+  globalStore.isInitDataLoading = false
+  // И гасим плашку «Updating…», чтобы она не зависла на странице входа.
+  globalStore.isUpdating = false
   await BaseService.router.push('/sign')
 }
 

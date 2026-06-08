@@ -11,6 +11,99 @@ import { ConfigObject } from './api/interface'
 import SyncService from './sync'
 
 export default class InitService extends BaseService {
+  static OFFLINE_FALLBACK_MS = 2000
+
+  static OFFLINE_ICON_MS = 4000
+
+  // Cold start: show skeletons, request fresh data, and progressively fall back.
+  // At OFFLINE_FALLBACK_MS we render the cached blob (no offline icon yet); at
+  // OFFLINE_ICON_MS, if the server is still silent, we flip to the offline icon.
+  // A successful response at any moment cancels the timers and applies fresh data.
+  // Fire-and-forget from boot so a hung request never blocks app mount.
+  static coldStart(): void {
+    const globalStore = useGlobalStore()
+
+    // The browser already reports no network — nothing to wait for, go offline now.
+    if (!globalStore.isOnline) {
+      if (!this.hydrateFromOffline()) {
+        this.showNoOfflineDataError()
+      }
+      return
+    }
+
+    const offlineDataTimer = setTimeout(() => {
+      // Показали кэш, но сервер ещё отвечает — включаем плашку «Updating…»,
+      // чтобы было видно, что свежие данные продолжают загружаться. Сбросит её
+      // synchronizeOfflineData (при ответе сервера) или таймер ниже (если ушли в офлайн).
+      if (this.hydrateFromOffline()) {
+        globalStore.isUpdating = true
+      }
+    }, this.OFFLINE_FALLBACK_MS)
+
+    const offlineIconTimer = setTimeout(() => {
+      const isOfflineShown = this.hydrateFromOffline()
+      if (isOfflineShown) {
+        globalStore.isOnline = false
+        // Перестали ждать сервер и ушли в офлайн — плашка «Updating…» больше не нужна.
+        globalStore.isUpdating = false
+      } else {
+        // Nothing to render and the server is unreachable — show the error screen.
+        this.showNoOfflineDataError()
+      }
+    }, this.OFFLINE_ICON_MS)
+
+    // isOnline is true at start, so ApiService.getConfig hits the online branch.
+    BaseService.api.getConfig()
+      .then(async (data) => {
+        clearTimeout(offlineDataTimer)
+        clearTimeout(offlineIconTimer)
+        if (!data) {
+          return
+        }
+        globalStore.isOnline = true
+        // isUpdating=true keeps skeletons from re-appearing (no flicker) while still
+        // clearing them in finally; it also merges offline edits and applies fresh data.
+        await this.initApplication(data, true)
+      })
+      .catch(async (error) => {
+        const parsedError = BaseService.parseAxiosError(error as AxiosError)
+        if (parsedError.statusCode === 401) {
+          clearTimeout(offlineDataTimer)
+          clearTimeout(offlineIconTimer)
+          await UsersService.signOut()
+        }
+        // Otherwise the network/server is down — leave isOnline and the timers
+        // untouched; they render the offline blob (2s) and the icon / error (4s).
+      })
+  }
+
+  // No cached data and the server is unreachable — surface the connection-error
+  // screen and stop the skeletons.
+  private static showNoOfflineDataError(): void {
+    const globalStore = useGlobalStore()
+    globalStore.isNoOfflineDataError = true
+    globalStore.isInitDataLoading = false
+  }
+
+  // Render the cached offline blob into the UI synchronously. Does NOT touch
+  // isOnline — the offline icon is driven solely by coldStart's timers.
+  static hydrateFromOffline(): boolean {
+    const globalStore = useGlobalStore()
+    const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)
+    if (!offlineData || !offlineData.user || !offlineData.types
+      || !offlineData.statuses || !this.isValidOfflineData(offlineData)) {
+      return false
+    }
+    // Order matters: NotesService.filtered relies on StatusesService.active.
+    TypesService.generateTypes(offlineData.types)
+    StatusesService.generateStatuses(offlineData.statuses)
+    NotesService.generateNotes(offlineData.notes)
+    globalStore.setUser(offlineData.user)
+    globalStore.isNoOfflineDataError = false
+    globalStore.isInitDataLoading = false
+    return true
+  }
+
   static async initApplication(data?: ConfigObject, isUpdating = false): Promise<void> {
     const globalStore = useGlobalStore()
 

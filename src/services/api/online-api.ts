@@ -14,8 +14,10 @@ export default class OnlineApiService implements IApi {
     this.api = OnlineApiService.axiosApi
   }
 
+  static CONFIG_REQUEST_TIMEOUT_MS = 10000
+
   async getConfig(): Promise<ConfigObject> {
-    const { data } = await this.api.get('config')
+    const { data } = await this.api.get('config', { timeout: OnlineApiService.CONFIG_REQUEST_TIMEOUT_MS })
     return data as ConfigObject
   }
 

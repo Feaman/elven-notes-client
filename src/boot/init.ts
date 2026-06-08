@@ -101,6 +101,5 @@ export default boot(async ({ app }) => {
   })
 
   SocketIOService.init()
-  await HealthService.check(HealthService.SHORT_TIMEOUT_MS)
-  await InitService.initApplication()
+  InitService.coldStart()
 })
