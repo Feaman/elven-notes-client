@@ -64,7 +64,11 @@ export default function noteModel(noteData: TNote) {
   const globalStore = useGlobalStore()
 
   function handleList(listData: TListItem[] = []) {
-    listData.forEach((listItemData) => list.value.push(listItemModel(listItemData) as unknown as TListItemModel))
+    listData.forEach((listItemData) =>
+      list.value.push(
+        listItemModel({ ...listItemData, noteId: listItemData.noteId || id.value }) as unknown as TListItemModel,
+      ),
+    )
   }
 
   function handleUser(userData: TUser | undefined) {

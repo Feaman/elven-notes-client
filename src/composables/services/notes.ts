@@ -61,7 +61,10 @@ function generateNotes(notesData: TNote[]) {
             existingListItem.updated = new Date(newListItemData.updated)
           }
         } else {
-          const newListItem = listItemModel(newListItemData) as unknown as TListItemModel
+          const newListItem = listItemModel({
+            ...newListItemData,
+            noteId: newListItemData.noteId || existingNote.id,
+          }) as unknown as TListItemModel
           existingNote.list.push(newListItem)
           setTimeout(() => {
             ListItemsService.handleListItemTextAreaHeight(newListItem.getTextarea())
