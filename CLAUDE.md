@@ -21,7 +21,7 @@ Every mutating API call goes through `src/services/api/api.ts` (`ApiService`), w
 - `OnlineApiService` (`src/services/api/online-api.ts`) — wraps axios; only called when `useGlobalStore().isOnline` is true.
 - `OfflineApiService` (`src/services/api/offline-api.ts`) — reads/writes a single LocalStorage blob keyed by `BaseService.OFFLINE_STORE_NAME` (`'offline-data'`).
 
-The offline store is **always** updated. When online, the online call runs first; the server-assigned id is then threaded into the offline write so the two stores stay aligned. Entities created offline get string ids prefixed `offline-<timestamp>` and are reconciled later.
+The offline store is **always** updated. Write ordering differs by operation: **creates** (`addNote` / `addListItem`) call the server first so the server-assigned id can be threaded into the offline write and the two stores stay aligned; **updates** (`updateNote` / `updateListItem`) are **offline-first** — the local blob is written first (synchronously, stamped with the current time), then the server. Offline-first updates keep the local blob the up-to-date source of truth the instant the user edits: a focus/`online` re-sync that races the edit then reconciles by `updated` timestamp (last-write-wins) and keeps the fresh local value, instead of clobbering an edit still in flight to the server (which would make typed text briefly "disappear" until the next refresh). Entities created offline get string ids prefixed `offline-<timestamp>` and are reconciled later.
 
 Reconciliation lives in `src/services/sync.ts` (`SyncService.synchronizeOfflineData`), triggered by:
 - the browser `online` event,

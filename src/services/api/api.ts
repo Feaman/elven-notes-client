@@ -97,6 +97,21 @@ export default class ApiService implements IApi {
     isShowCheckedCheckboxes: boolean,
     isPrioritySort: boolean,
   ): Promise<TNote> {
+    // Offline-first: persist locally first (synchronous, stamped with the
+    // current time) so the offline blob is immediately the up-to-date source of
+    // truth. A background re-sync that races this edit then compares against
+    // fresh local data and keeps it (last-write-wins) instead of clobbering an
+    // edit still in flight to the server. The server write follows.
+    const offlineNote = await this.offlineApiService.updateNote(
+      id,
+      title,
+      text,
+      typeId,
+      isCompletedListExpanded,
+      isCountable,
+      isShowCheckedCheckboxes,
+      isPrioritySort,
+    )
     if (useGlobalStore().isOnline && !isOfflineId(id)) {
       await this.tryOnlineCall(() => this.onlineApiService.updateNote(
         id,
@@ -109,16 +124,7 @@ export default class ApiService implements IApi {
         isPrioritySort,
       ))
     }
-    return this.offlineApiService.updateNote(
-      id,
-      title,
-      text,
-      typeId,
-      isCompletedListExpanded,
-      isCountable,
-      isShowCheckedCheckboxes,
-      isPrioritySort,
-    )
+    return offlineNote
   }
 
   async completeNote(id: number | string): Promise<TNote> {
@@ -159,10 +165,13 @@ export default class ApiService implements IApi {
   }
 
   async updateListItem(listItem: TListItemModel): Promise<TListItem> {
+    // Offline-first (see updateNote): the local write goes first so a racing
+    // re-sync compares against fresh local data instead of overwriting it.
+    const offlineListItem = await this.offlineApiService.updateListItem(listItem)
     if (useGlobalStore().isOnline && !isOfflineId(listItem.id) && !isOfflineId(listItem.noteId)) {
       await this.tryOnlineCall(() => this.onlineApiService.updateListItem(listItem))
     }
-    return this.offlineApiService.updateListItem(listItem)
+    return offlineListItem
   }
 
   async removeListItem(listItem: TListItemModel | TListItem, completely = false) {
