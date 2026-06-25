@@ -11,70 +11,74 @@ import { ConfigObject } from './api/interface'
 import SyncService from './sync'
 
 export default class InitService extends BaseService {
-  static OFFLINE_FALLBACK_MS = 2000
-
   static OFFLINE_ICON_MS = 4000
 
-  // Cold start: show skeletons, request fresh data, and progressively fall back.
-  // At OFFLINE_FALLBACK_MS we render the cached blob (no offline icon yet); at
-  // OFFLINE_ICON_MS, if the server is still silent, we flip to the offline icon.
-  // A successful response at any moment cancels the timers and applies fresh data.
+  // Cold start: render the cached blob immediately (no skeletons, no «Updating…»
+  // toast — the startup reconcile is silent), then refresh from the server in
+  // the background. If the server stays silent past OFFLINE_ICON_MS we flip to
+  // the offline icon; a successful response applies fresh data and cancels the
+  // timer. With no cached data we keep skeletons until the server answers (or
+  // show the error screen at OFFLINE_ICON_MS).
   // Fire-and-forget from boot so a hung request never blocks app mount.
   static coldStart(): void {
     const globalStore = useGlobalStore()
 
-    // The browser already reports no network — nothing to wait for, go offline now.
+    // First paint shows real cached data, never skeletons — whenever a cache exists.
+    const isOfflineShown = this.hydrateFromOffline()
+
+    // The browser already reports no network — nothing to fetch.
     if (!globalStore.isOnline) {
-      if (!this.hydrateFromOffline()) {
+      if (!isOfflineShown) {
         this.showNoOfflineDataError()
       }
       return
     }
 
-    const offlineDataTimer = setTimeout(() => {
-      // Показали кэш, но сервер ещё отвечает — включаем плашку «Updating…»,
-      // чтобы было видно, что свежие данные продолжают загружаться. Сбросит её
-      // synchronizeOfflineData (при ответе сервера) или таймер ниже (если ушли в офлайн).
-      if (this.hydrateFromOffline()) {
-        globalStore.isUpdating = true
-      }
-    }, this.OFFLINE_FALLBACK_MS)
-
+    // Fallback if the server stays silent (no response, no error): flip to the
+    // offline icon without waiting out getConfig's own 10s timeout.
     const offlineIconTimer = setTimeout(() => {
-      const isOfflineShown = this.hydrateFromOffline()
-      if (isOfflineShown) {
-        globalStore.isOnline = false
-        // Перестали ждать сервер и ушли в офлайн — плашка «Updating…» больше не нужна.
-        globalStore.isUpdating = false
-      } else {
-        // Nothing to render and the server is unreachable — show the error screen.
-        this.showNoOfflineDataError()
-      }
+      this.goOfflineOrShowError(isOfflineShown)
     }, this.OFFLINE_ICON_MS)
 
     // isOnline is true at start, so ApiService.getConfig hits the online branch.
     BaseService.api.getConfig()
       .then(async (data) => {
-        clearTimeout(offlineDataTimer)
         clearTimeout(offlineIconTimer)
         if (!data) {
           return
         }
         globalStore.isOnline = true
-        // isUpdating=true keeps skeletons from re-appearing (no flicker) while still
-        // clearing them in finally; it also merges offline edits and applies fresh data.
+        // isUpdating=true keeps skeletons from re-appearing (no flicker) while
+        // still clearing them in finally; it also merges offline edits and
+        // applies fresh data — silently, since synchronizeOfflineData no longer
+        // raises the «Updating…» toast on its own.
         await this.initApplication(data, true)
       })
       .catch(async (error) => {
+        // The request failed fast — react now instead of waiting out the timer.
+        clearTimeout(offlineIconTimer)
         const parsedError = BaseService.parseAxiosError(error as AxiosError)
         if (parsedError.statusCode === 401) {
-          clearTimeout(offlineDataTimer)
-          clearTimeout(offlineIconTimer)
           await UsersService.signOut()
+          return
         }
-        // Otherwise the network/server is down — leave isOnline and the timers
-        // untouched; they render the offline blob (2s) and the icon / error (4s).
+        // Network/server is down — offline icon over the cache, or the error
+        // screen if there was nothing to render.
+        this.goOfflineOrShowError(isOfflineShown)
       })
+  }
+
+  // Server is unreachable: drop to offline mode over the cached data, or show
+  // the connection-error screen if nothing was cached to render. Shared by the
+  // OFFLINE_ICON_MS timer (server stayed silent) and the getConfig catch
+  // (request failed fast) — both react identically.
+  private static goOfflineOrShowError(isOfflineShown: boolean): void {
+    const globalStore = useGlobalStore()
+    if (isOfflineShown || this.hydrateFromOffline()) {
+      globalStore.isOnline = false
+    } else {
+      this.showNoOfflineDataError()
+    }
   }
 
   // No cached data and the server is unreachable — surface the connection-error
@@ -86,7 +90,7 @@ export default class InitService extends BaseService {
   }
 
   // Render the cached offline blob into the UI synchronously. Does NOT touch
-  // isOnline — the offline icon is driven solely by coldStart's timers.
+  // isOnline — the offline icon is driven solely by coldStart.
   static hydrateFromOffline(): boolean {
     const globalStore = useGlobalStore()
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME)

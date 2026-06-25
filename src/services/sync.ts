@@ -44,7 +44,10 @@ export default class SyncService extends BaseService {
     this.clearRemovedOfflineNotesAndListItems()
 
     const globalStore = useGlobalStore()
-    globalStore.isUpdating = true
+    // The «Updating…» toast is owned by the visible-refresh trigger
+    // (handleApplicationUpdate on focus/online), not by this reconcile: the
+    // cold-start sync must stay silent, so we don't raise the flag here — we
+    // only clear it in `finally` as a safety net if a caller set it.
     try {
       const onlineData = data || (await BaseService.api.getConfig())
 
