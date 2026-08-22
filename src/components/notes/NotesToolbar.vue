@@ -7,7 +7,7 @@
         CreateTools
         q-btn(
           v-if="isWatch"
-          @click="switchWatchMode(true)"
+          @click="switchWatchMode()"
           :icon="mdiWatch"
           color="black"
           flat

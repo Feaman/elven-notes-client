@@ -24,6 +24,16 @@ export default class BaseService {
 
   static router: Router
 
+  static getApiUrl(): string {
+    return process.env.DEV ? BaseService.DEV_API_URL : BaseService.API_URL
+  }
+
+  // URL файла, раздаваемого серверной статикой /files (filePath — относительный путь из поля avatar)
+  static getFileUrl(filePath: string): string {
+    const apiUrl = BaseService.getApiUrl()
+    return `${apiUrl}${apiUrl.endsWith('/') ? '' : '/'}files/${filePath}`
+  }
+
   static isNetworkError(error: unknown): boolean {
     return isAxiosError(error) && !error.response
   }

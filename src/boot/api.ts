@@ -20,7 +20,7 @@ declare module '@vue/runtime-core' {
 // "export default () => {}" function below (which runs individually
 // for each client)
 const axiosInstance = axios.create({
-  baseURL: process.env.DEV ? BaseService.DEV_API_URL : BaseService.API_URL,
+  baseURL: BaseService.getApiUrl(),
 })
 
 export default boot(() => {

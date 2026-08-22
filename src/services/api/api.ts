@@ -1,6 +1,7 @@
 import { TCoAuthor } from '~/composables/models/co-author'
 import { TListItemModel, type TListItem } from '~/composables/models/list-item'
 import { TNote, TNoteModel } from '~/composables/models/note'
+import { TProfileData, TUser } from '~/composables/models/user'
 import { useGlobalStore } from '~/stores/global'
 import BaseService from '~/services/base'
 import IApi, { ConfigObject } from './interface'
@@ -250,12 +251,17 @@ export default class ApiService implements IApi {
     }
   }
 
-  async updateUser() {
-    // Offline-first: apply the change locally first, then to the server.
-    await this.offlineApiService.updateUser()
-    if (useGlobalStore().isOnline) {
-      await this.tryOnlineCall(() => this.onlineApiService.updateUser())
+  // Online-only (в отличие от прочих мутаций): файл фото нельзя положить в LocalStorage-очередь,
+  // поэтому профиль не пишется в offline-блоб до подтверждения сервером. После успешного ответа
+  // подтверждённые данные (включая серверный путь аватарки) освежают пользователя в offline-блобе.
+  async updateProfile(profileData: TProfileData): Promise<TUser> {
+    if (!useGlobalStore().isOnline) {
+      throw new Error('This action is not available in offline mode')
     }
+
+    const userData = await this.onlineApiService.updateProfile(profileData)
+    this.offlineApiService.setUser(userData)
+    return userData
   }
 
   async checkStatus(config?: object): Promise<void> {

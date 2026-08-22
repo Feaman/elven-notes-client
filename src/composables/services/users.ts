@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { TProfileData } from '~/composables/models/user'
 import { ConfigObject } from '~/services/api/interface'
 import BaseService from '~/services/base'
 import InitService from '~/services/init'
@@ -20,6 +21,12 @@ async function signIn(email: string, password: string) {
 async function register(email: string, password: string, firstName: string, secondName: string) {
   const data = await BaseService.api.signUp(email, password, firstName, secondName)
   auth(data)
+}
+
+async function updateProfile(profileData: TProfileData) {
+  const userData = await BaseService.api.updateProfile(profileData)
+  // Пересборка модели через setUser обновляет пользователя во всём интерфейсе сразу (user — ref в сторе)
+  useGlobalStore().setUser(userData)
 }
 
 async function signOut() {
@@ -45,4 +52,5 @@ export default {
   signIn,
   signOut,
   register,
+  updateProfile,
 }

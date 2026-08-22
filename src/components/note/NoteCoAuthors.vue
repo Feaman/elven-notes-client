@@ -1,14 +1,13 @@
 <template lang="pug">
 .note-co-authors.q-flex.justify-end.full-width
   .co-authors.q-flex.justify-end
-    q-avatar(
+    UserAvatar(
       v-for="(coAuthor, index) in coAuthors"
       :key="coAuthor.id"
       :class="{ 'ml-2': index > 0 }"
+      :user="coAuthor.user"
       size="20px"
-      color="purple"
     )
-      .text-white.font-size-10 {{ coAuthor.user.getInitials() }}
 </template>
 
 <script setup lang="ts">

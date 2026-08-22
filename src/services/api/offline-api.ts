@@ -370,10 +370,18 @@ export default class OfflineApiService implements IApi {
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
   }
 
-  async updateUser() {
-    this.checkAuthToken()
-    const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject
+  async updateProfile(): Promise<TUser> {
+    throw new Error('This action is not available in offline mode')
+  }
 
+  // Не часть IApi: фасад записывает сюда подтверждённые сервером данные пользователя после сохранения профиля
+  setUser(userData: TUser) {
+    const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject | undefined
+    if (!offlineData) {
+      return
+    }
+
+    offlineData.user = userData
     StorageService.set({ [BaseService.OFFLINE_STORE_NAME]: offlineData })
   }
 }

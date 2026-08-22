@@ -1,6 +1,7 @@
 import { TCoAuthor } from '~/composables/models/co-author'
 import { TListItemModel, type TListItem } from '~/composables/models/list-item'
 import { TNote, TNoteModel } from '~/composables/models/note'
+import { AVATAR_REMOVED_FLAG, TProfileData, TUser } from '~/composables/models/user'
 import AxiosApi from '~/services/api/axios-api'
 import IApi from '~/services/api/interface'
 import { ConfigObject } from './interface'
@@ -165,9 +166,22 @@ export default class OnlineApiService implements IApi {
     await this.api.put('notes/set-order', { order })
   }
 
-  async updateUser() {
-    const userData = {}
-    await this.api.put('users', userData)
+  async updateProfile(profileData: TProfileData): Promise<TUser> {
+    const profileFormData = new FormData()
+    profileFormData.append('email', profileData.email.trim())
+    profileFormData.append('firstName', profileData.firstName.trim())
+    profileFormData.append('secondName', profileData.secondName.trim())
+    if (profileData.password) {
+      profileFormData.append('password', profileData.password)
+    }
+    if (profileData.photoFile) {
+      profileFormData.append('photo', profileData.photoFile)
+    } else if (profileData.isAvatarRemoved) {
+      profileFormData.append('isAvatarRemoved', AVATAR_REMOVED_FLAG)
+    }
+
+    const { data } = await this.api.put('users/profile', profileFormData)
+    return data as TUser
   }
 
   async checkStatus(config?: object): Promise<void> {

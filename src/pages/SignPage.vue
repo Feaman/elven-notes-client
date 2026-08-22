@@ -31,7 +31,7 @@
             q-input.q-mt-lg(
               v-model="email"
               label="Email"
-              :maxlength="RULE_1024_LENGTH"
+              :maxlength="EMAIL_MAX_LENGTH"
               counter
               clearable
               outlined
@@ -41,7 +41,7 @@
               v-model="password"
               label="Password"
               type="password"
-              :maxlength="RULE_155_LENGTH"
+              :maxlength="PASSWORD_MAX_LENGTH"
               counter
               clearable
               outlined
@@ -58,7 +58,7 @@
             q-input.q-mt-lg(
               v-model="email"
               label="Email"
-              :maxlength="RULE_155_LENGTH"
+              :maxlength="EMAIL_MAX_LENGTH"
               counter
               clearable
               dense
@@ -69,7 +69,7 @@
               v-model="password"
               type="password"
               label="Password"
-              :maxlength="RULE_155_LENGTH"
+              :maxlength="PASSWORD_MAX_LENGTH"
               counter
               clearable
               dense
@@ -79,7 +79,7 @@
             q-input.q-mt-lg(
               v-model="firstName"
               label="First Name"
-              :maxlength="RULE_155_LENGTH"
+              :maxlength="NAME_MAX_LENGTH"
               counter
               clearable
               dense
@@ -89,7 +89,7 @@
             q-input.q-mt-lg(
               v-model="secondName"
               label="Second Name"
-              :maxlength="RULE_155_LENGTH"
+              :maxlength="NAME_MAX_LENGTH"
               counter
               clearable
               dense
@@ -124,6 +124,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { EMAIL_MAX_LENGTH, NAME_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '~/composables/models/user'
 import UsersService from '~/composables/services/users'
 import KeyboardEvents from '~/helpers/keyboard-events'
 import StorageService from '~/services/storage'
@@ -136,9 +137,6 @@ const globalStore = useGlobalStore()
 if (isTokenExists) {
   router.push('/')
 }
-
-const RULE_155_LENGTH = 155
-const RULE_1024_LENGTH = 1024
 
 const rootElement = ref<HTMLElement | null>(null)
 
@@ -156,15 +154,15 @@ function togglePage() {
 }
 
 const isValid = computed(() => {
-  const isEmailAndPasswordValid = email.value && email.value.length <= RULE_1024_LENGTH
-    && password.value && password.value.length <= RULE_155_LENGTH
+  const isEmailAndPasswordValid = email.value && email.value.length <= EMAIL_MAX_LENGTH
+    && password.value && password.value.length <= PASSWORD_MAX_LENGTH
 
   if (isSignIn.value) {
     return isEmailAndPasswordValid
   }
 
-  return isEmailAndPasswordValid && secondName.value && secondName.value.length <= RULE_155_LENGTH
-    && password.value && password.value.length <= RULE_155_LENGTH
+  return isEmailAndPasswordValid && firstName.value && firstName.value.length <= NAME_MAX_LENGTH
+    && secondName.value && secondName.value.length <= NAME_MAX_LENGTH
 })
 
 async function sign() {

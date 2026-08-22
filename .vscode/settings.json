@@ -14,7 +14,14 @@
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "[vue]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    // Страховка от глобальной настройки "[vue]" source.organizeImports=always: если версия
+    // @vue/language-plugin-pug разойдётся с версией расширения Vue, редактор перестанет видеть
+    // pug-шаблоны и organizeImports молча удалит импорты, используемые только в шаблоне.
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always",
+      "source.organizeImports": "never"
+    }
   },
   "[scss]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

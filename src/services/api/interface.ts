@@ -3,7 +3,7 @@ import { TListItemModel, type TListItem } from '~/composables/models/list-item'
 import { TNote, TNoteModel } from '~/composables/models/note'
 import { IStatus } from '~/composables/models/status'
 import { IType } from '~/composables/models/type'
-import { TUser } from '~/composables/models/user'
+import { TProfileData, TUser } from '~/composables/models/user'
 
 export interface ConfigObject {
   user: TUser,
@@ -63,5 +63,5 @@ export default interface IApi {
 
   setNotesOrder(order: number[]): void
 
-  updateUser(): void
+  updateProfile(profileData: TProfileData): Promise<TUser>
 }

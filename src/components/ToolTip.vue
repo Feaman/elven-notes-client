@@ -7,8 +7,10 @@ q-tooltip(
 </template>
 
 <script setup lang="ts">
+import type { QTooltipProps } from 'quasar'
+
 defineProps<{
-  anchor?: string
-  self?: string
+  anchor?: QTooltipProps['anchor']
+  self?: QTooltipProps['self']
 }>()
 </script>
