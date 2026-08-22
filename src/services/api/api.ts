@@ -251,9 +251,9 @@ export default class ApiService implements IApi {
     }
   }
 
-  // Online-only (в отличие от прочих мутаций): файл фото нельзя положить в LocalStorage-очередь,
-  // поэтому профиль не пишется в offline-блоб до подтверждения сервером. После успешного ответа
-  // подтверждённые данные (включая серверный путь аватарки) освежают пользователя в offline-блобе.
+  // Online-only (unlike other mutations): a photo file cannot be put into the LocalStorage queue,
+  // so the profile is not written to the offline blob until the server confirms. After a successful
+  // response the confirmed data (including the server-side avatar path) refreshes the user in the offline blob.
   async updateProfile(profileData: TProfileData): Promise<TUser> {
     if (!useGlobalStore().isOnline) {
       throw new Error('This action is not available in offline mode')

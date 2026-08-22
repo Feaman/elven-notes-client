@@ -45,7 +45,7 @@
                 :name="mdiAccountOutline"
                 color="black"
               )
-              .cursor-pointer.py-1.ml-2 Учётная запись
+              .cursor-pointer.py-1.ml-2 Account
         q-item.bg-light-blue-1(
           @click="clearLocalNotesData()"
           clickable

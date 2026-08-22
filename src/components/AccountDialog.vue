@@ -7,7 +7,7 @@ q-dialog(
 )
   q-card.account-dialog
     q-toolbar.q-flex.bg-primary.shadow-3
-      q-toolbar-title.text-black Учётная запись
+      q-toolbar-title.text-black Account
       q-btn(
         @click="$emit('hide')"
         :icon="mdiClose"
@@ -17,10 +17,10 @@ q-dialog(
         dense
       )
     .px-6.pt-4.pb-4
-      .text-weight-bold Учётные данные
+      .text-weight-bold Credentials
       q-input.mt-2(
         v-model="email"
-        label="Электропочта"
+        label="Email"
         :maxlength="EMAIL_MAX_LENGTH"
         :disable="isLoading"
         counter
@@ -31,9 +31,9 @@ q-dialog(
       q-input.mt-2(
         v-model="password"
         :type="isPasswordVisible ? 'text' : 'password'"
-        label="Пароль"
+        label="Password"
         :maxlength="PASSWORD_MAX_LENGTH"
-        hint="Оставьте пустым, чтобы не менять"
+        hint="Leave empty to keep unchanged"
         :disable="isLoading"
         counter
         clearable
@@ -45,10 +45,10 @@ q-dialog(
             @click="isPasswordVisible = !isPasswordVisible"
             :name="isPasswordVisible ? mdiEyeOff : mdiEye"
           )
-      .text-weight-bold.mt-4 Персональные данные
+      .text-weight-bold.mt-4 Personal data
       q-input.mt-2(
         v-model="firstName"
-        label="Имя"
+        label="First name"
         :maxlength="NAME_MAX_LENGTH"
         :disable="isLoading"
         counter
@@ -58,7 +58,7 @@ q-dialog(
       )
       q-input.mt-2(
         v-model="secondName"
-        label="Фамилия"
+        label="Last name"
         :maxlength="NAME_MAX_LENGTH"
         :disable="isLoading"
         counter
@@ -85,7 +85,7 @@ q-dialog(
             v-if="isAvatarRemovalAvailable"
             @click="removePhoto()"
             :disable="isLoading"
-            label="Убрать фото"
+            label="Remove photo"
             color="red-4"
             class="q-mt-xs"
             dense
@@ -95,7 +95,7 @@ q-dialog(
           @rejected="handlePhotoRejected"
           @update:model-value="setPhotoFile"
           :model-value="photoFile"
-          :max-file-size="AVATAR_MAX_FILE_SIZE_BYTES"
+          :max-file-size="PHOTO_INPUT_MAX_FILE_SIZE_BYTES"
           :accept="PHOTO_ACCEPTED_EXTENSIONS"
         )
       .font-size-12.mt-1(
@@ -104,39 +104,31 @@ q-dialog(
       .text-red.mt-4(
         v-if="errorText"
       ) {{ errorText }}
-    .q-flex.bg-primary
-      q-btn.col(
-        @click="$emit('hide')"
-        :icon="mdiChevronDown"
-        color="black"
-        size="18px"
-        square
-        flat
-      )
-      q-separator(
-        vertical
-      )
-      q-btn.account-dialog__save-button(
+    q-separator
+    q-card-actions(
+      align="right"
+    )
+      q-btn(
         @click="save()"
         :disable="!isValid || !globalStore.isOnline"
         :loading="isLoading"
-        :icon="mdiContentSaveOutline"
+        label="Save"
         color="black"
-        size="18px"
-        square
         flat
       )
-        ToolTip
-          | {{ globalStore.isOnline ? 'Сохранить' : OFFLINE_HINT }}
+        ToolTip(
+          v-if="!globalStore.isOnline"
+        )
+          | {{ OFFLINE_HINT }}
 </template>
 
 <script setup lang="ts">
-import { mdiChevronDown, mdiClose, mdiContentSaveOutline, mdiEye, mdiEyeOff } from '@quasar/extras/mdi-v6'
+import { mdiClose, mdiEye, mdiEyeOff } from '@quasar/extras/mdi-v6'
 import { AxiosError } from 'axios'
 import { Notify, QFile } from 'quasar'
 import { computed, ref, watch } from 'vue'
 import {
-  AVATAR_MAX_FILE_SIZE_BYTES, EMAIL_MAX_LENGTH, NAME_MAX_LENGTH, PASSWORD_MAX_LENGTH,
+  AVATAR_MAX_FILE_SIZE_BYTES, compressAvatarPhoto, EMAIL_MAX_LENGTH, NAME_MAX_LENGTH, PASSWORD_MAX_LENGTH,
 } from '~/composables/models/user'
 import UsersService from '~/composables/services/users'
 import BaseService from '~/services/base'
@@ -151,13 +143,16 @@ const emit = defineEmits<{
 }>()
 
 const PHOTO_ACCEPTED_EXTENSIONS = '.png,.jpg,.jpeg'
+// The photo is compressed on the client before upload; this guards only against absurdly large originals
+const PHOTO_INPUT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
 const PHOTO_SIZE_ERROR_NAME = 'max-file-size'
 const PHOTO_ACCEPT_ERROR_NAME = 'accept'
-const ERROR_PHOTO_TYPE = 'Допустимы только изображения PNG и JPEG'
-// Правка профиля не кладётся в offline-очередь (файл фото в LocalStorage не сохранить)
-const OFFLINE_HINT = 'Учётная запись недоступна без соединения с сервером'
+const ERROR_PHOTO_TYPE = 'Only PNG and JPEG images are allowed'
+const ERROR_PHOTO_PROCESSING = `Failed to process the photo — choose a file up to ${AVATAR_MAX_FILE_SIZE_BYTES / 1024 / 1024} MB`
+// Profile editing is not queued for offline (a photo file cannot be stored in LocalStorage)
+const OFFLINE_HINT = 'Account is not available without a server connection'
 
-const photoHint = `Максимальный размер файла — ${AVATAR_MAX_FILE_SIZE_BYTES / 1024 / 1024} МБ`
+const photoHint = `Maximum file size — ${PHOTO_INPUT_MAX_FILE_SIZE_BYTES / 1024 / 1024} MB`
 
 const globalStore = useGlobalStore()
 
@@ -180,7 +175,7 @@ watch(() => props.modelValue, (isShown) => {
   }
 })
 
-// undefined — показать текущую аватарку пользователя, '' — инициалы (фото убрано)
+// undefined — show the user's current avatar, '' — initials (photo removed)
 const previewImageUrl = computed(() => {
   if (photoPreviewUrl.value) {
     return photoPreviewUrl.value
@@ -193,7 +188,7 @@ const isAvatarRemovalAvailable = computed(
   () => !!photoFile.value || (!isAvatarRemoved.value && !!globalStore.user?.avatar),
 )
 
-const photoButtonLabel = computed(() => (isAvatarRemovalAvailable.value ? 'Изменить фото' : 'Выбрать фото'))
+const photoButtonLabel = computed(() => (isAvatarRemovalAvailable.value ? 'Change photo' : 'Choose photo'))
 
 const displayedPhotoHint = computed(() => {
   if (!globalStore.isOnline) {
@@ -229,19 +224,34 @@ function pickPhoto() {
   photoFilePicker.value?.pickFiles()
 }
 
-function setPhotoFile(file: File | null) {
-  photoFile.value = file
+async function setPhotoFile(file: File | null) {
   photoErrorText.value = ''
-  // Выбор нового файла отменяет запрошенное удаление фото
+  // Picking a new file cancels the requested photo removal
   isAvatarRemoved.value = false
 
   if (!file) {
+    photoFile.value = null
     photoPreviewUrl.value = ''
     return
   }
 
+  let preparedPhotoFile: File
+  try {
+    preparedPhotoFile = await compressAvatarPhoto(file)
+  } catch {
+    // The canvas pipeline failed (corrupt or unsupported image) — upload the original if the server accepts its size
+    if (file.size > AVATAR_MAX_FILE_SIZE_BYTES) {
+      photoFile.value = null
+      photoPreviewUrl.value = ''
+      photoErrorText.value = ERROR_PHOTO_PROCESSING
+      return
+    }
+    preparedPhotoFile = file
+  }
+
+  photoFile.value = preparedPhotoFile
   const photoReader = new FileReader()
-  photoReader.readAsDataURL(file)
+  photoReader.readAsDataURL(preparedPhotoFile)
   photoReader.onload = () => {
     photoPreviewUrl.value = photoReader.result as string
   }
@@ -275,9 +285,9 @@ async function save() {
       photoFile: photoFile.value,
       isAvatarRemoved: isAvatarRemoved.value,
     })
-    // Тот же стиль, что у тоста «Updating...» в MainLayout: снизу, тёмный фон, жёлтый текст
+    // Same style as the «Updating...» toast in MainLayout: bottom position, dark background, yellow text
     Notify.create({
-      message: 'Учётная запись сохранена',
+      message: 'Account saved',
       textColor: 'primary',
       icon: 'check',
       timeout: 2000,
@@ -295,9 +305,5 @@ async function save() {
 .account-dialog {
   max-width: 350px;
   width: 100%;
-
-  .account-dialog__save-button {
-    width: 3em;
-  }
 }
 </style>

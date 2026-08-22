@@ -25,17 +25,17 @@ async function register(email: string, password: string, firstName: string, seco
 
 async function updateProfile(profileData: TProfileData) {
   const userData = await BaseService.api.updateProfile(profileData)
-  // Пересборка модели через setUser обновляет пользователя во всём интерфейсе сразу (user — ref в сторе)
+  // Rebuilding the model via setUser updates the user across the whole UI at once (user is a ref in the store)
   useGlobalStore().setUser(userData)
 }
 
 async function signOut() {
   InitService.clearApplication()
-  // Сбрасываем флаг загрузки: иначе MainLayout остаётся на экране загрузки
-  // (скелетоны только для маршрутов заметок), и страница /sign не отрисовывается.
+  // Reset the loading flag: otherwise MainLayout stays on the loading screen
+  // (skeletons are only for note routes) and the /sign page is not rendered.
   const globalStore = useGlobalStore()
   globalStore.isInitDataLoading = false
-  // И гасим плашку «Updating…», чтобы она не зависла на странице входа.
+  // Also hide the «Updating…» toast so it does not get stuck on the sign-in page.
   globalStore.isUpdating = false
   await BaseService.router.push('/sign')
 }

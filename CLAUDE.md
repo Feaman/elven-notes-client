@@ -61,9 +61,10 @@ There are two distinct kinds of "services":
 
 ### User profile & avatar
 
-- The account block lives in `UserMenu.vue` (toolbar button + menu header + «Учётная запись» item); both the header and the item open `AccountDialog.vue` — a local-`ref` `q-dialog` rendered **outside** the `q-menu` so it survives the menu closing (the project's standard dialog pattern; there is no dialog registry/route).
+- The account block lives in `UserMenu.vue` (toolbar button + menu header + «Account» item); both the header and the item open `AccountDialog.vue` — a local-`ref` `q-dialog` rendered **outside** the `q-menu` so it survives the menu closing (the project's standard dialog pattern; there is no dialog registry/route).
 - `UserAvatar.vue` is the reusable "photo or initials" avatar (props: `user`, `size`, optional `imageUrl` where `undefined` = show the user's photo and `''` = force initials). Use it wherever a user is displayed (menu, app toolbar, profile preview, note co-authors) instead of hand-rolling `q-avatar` + initials.
 - User field length limits (`EMAIL_MAX_LENGTH`, `PASSWORD_MAX_LENGTH`, `NAME_MAX_LENGTH`) and avatar constants (`AVATAR_MAX_FILE_SIZE_BYTES`, `AVATAR_REMOVED_FLAG`) live in `src/composables/models/user.ts` and are shared by `SignPage` and `AccountDialog` — don't duplicate the numbers.
+- The avatar photo is compressed **client-side** before upload (`compressAvatarPhoto` in `src/composables/models/user.ts`: `createImageBitmap` → canvas ≤1024px → JPEG 0.85), so the picked file almost never hits the server's 2 MB `multer` limit; `AVATAR_MAX_FILE_SIZE_BYTES` mirrors that server limit and only guards the fallback path where the canvas pipeline fails and the original file is sent as is. `AccountDialog`'s `q-file` cap (`PHOTO_INPUT_MAX_FILE_SIZE_BYTES`, 20 MB) is just a sanity bound on the original.
 - Saving goes `AccountDialog` → `UsersService.updateProfile` (composable) → `ApiService.updateProfile` (multipart `PUT users/profile`, online-only — see the offline section) → `globalStore.setUser(...)`, which rebuilds the user model so the whole UI updates immediately.
 - Avatar URLs are built with `BaseService.getFileUrl(relativePath)` (server static `/files`); `BaseService.getApiUrl()` is the single dev/prod base-URL switch.
 

@@ -8,7 +8,7 @@ q-avatar.non-selectable(
     v-if="displayedImageUrl && !isImageLoadFailed"
     @error="isImageLoadFailed = true"
     :src="displayedImageUrl"
-    alt="Аватарка"
+    alt="Avatar"
   )
   div(
     v-else
@@ -19,14 +19,14 @@ q-avatar.non-selectable(
 import { computed, ref, watch } from 'vue'
 import type { TUserModel } from '~/composables/models/user'
 
-// imageUrl: undefined — показывать аватарку пользователя, '' — принудительно инициалы (фото убрано)
+// imageUrl: undefined — show the user's avatar, '' — force initials (photo removed)
 const props = defineProps<{
   user: TUserModel | null,
   size: string,
   imageUrl?: string,
 }>()
 
-// Фото может не загрузиться (offline, файл удалён) — тогда показываются инициалы вместо сломанной картинки
+// The photo may fail to load (offline, file deleted) — then initials are shown instead of a broken image
 const isImageLoadFailed = ref(false)
 
 const displayedImageUrl = computed(() => (props.imageUrl !== undefined ? props.imageUrl : props.user?.getAvatarUrl() || ''))

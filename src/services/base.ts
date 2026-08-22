@@ -28,7 +28,7 @@ export default class BaseService {
     return process.env.DEV ? BaseService.DEV_API_URL : BaseService.API_URL
   }
 
-  // URL файла, раздаваемого серверной статикой /files (filePath — относительный путь из поля avatar)
+  // URL of a file served by the server's /files static route (filePath is a relative path from the avatar field)
   static getFileUrl(filePath: string): string {
     const apiUrl = BaseService.getApiUrl()
     return `${apiUrl}${apiUrl.endsWith('/') ? '' : '/'}files/${filePath}`

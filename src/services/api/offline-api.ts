@@ -374,7 +374,7 @@ export default class OfflineApiService implements IApi {
     throw new Error('This action is not available in offline mode')
   }
 
-  // Не часть IApi: фасад записывает сюда подтверждённые сервером данные пользователя после сохранения профиля
+  // Not part of IApi: the facade writes the server-confirmed user data here after a profile save
   setUser(userData: TUser) {
     const offlineData = StorageService.get(BaseService.OFFLINE_STORE_NAME) as ConfigObject | undefined
     if (!offlineData) {
